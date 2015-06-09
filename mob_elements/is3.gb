@@ -1,0 +1,46 @@
+LOCUS       IS3                     1255 bp ds-DNA     linear       01-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     gene            54..362
+                     /label="insE-1 gene"
+                     /ApEinfo_revcolor=#ff9ccd
+                     /ApEinfo_fwdcolor=#ff9ccd
+     CDS             54..362
+                     /label="insE-1 CDS (IS3 element protein InsE)"
+                     /ApEinfo_revcolor=#d59687
+                     /ApEinfo_fwdcolor=#d59687
+     mobile_element  1..1255
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#d6b295
+                     /ApEinfo_fwdcolor=#d6b295
+     CDS             359..1225
+                     /label="insF-1 CDS (IS3 element protein InsF)"
+                     /ApEinfo_revcolor=#75c6a9
+                     /ApEinfo_fwdcolor=#75c6a9
+     gene            359..1225
+                     /label="insF-1 gene"
+                     /ApEinfo_revcolor=#ff9ccd
+                     /ApEinfo_fwdcolor=#ff9ccd
+ORIGIN
+        1 tcttacccag caatagtgga cacgcggcta agtgagtaaa ctctcagtca gaggtgactc
+       61 acatgacaaa aacagtatca accagtaaaa aaccccgtaa acagcattcg cctgaatttc
+      121 gcagtgaagc cctgaagctt gctgaacgca tcggtgttac tgccgcagcc cgtgaactca
+      181 gcctgtatga atcacaactc tacaactggc gcagtaaaca gcaaaatcag cagacgtctt
+      241 ctgaacgtga actggagatg tctaccgaga ttgcacgtct caaacgccag ctggcagaac
+      301 gggatgaaga gctggctatc ctccaaaagg ccgcgacata cttcgcgaag cgcctgaaat
+      361 gaagtatgtc tttattgaaa aacatcaggc tgagttcagc atcaaagcaa tgtgccgcgt
+      421 gctccgggtg gcccgcagcg gctggtatac gtggtgtcag cggcggacaa ggataagcac
+      481 gcgtcagcag ttccgccaac actgcgacag cgttgtcctc gcggctttta cccggtcaaa
+      541 acagcgttac ggtgccccac gcctgacgga tgaactgcgt gctcagggtt acccctttaa
+      601 cgtaaaaacc gtggcggcaa gcctgcgccg tcagggactg agggcaaagg cctcccggaa
+      661 gttcagcccg gtcagctacc gcgcacacgg cctgcctgtg tcagaaaatc tgttggagca
+      721 ggatttttac gccagtggcc cgaaccagaa gtgggcagga gacatcacgt acttacgtac
+      781 agatgaaggc tggctgtatc tggcagtggt cattgacctg tggtcacgtg ccgttattgg
+      841 ctggtcaatg tcgccacgca tgacggcgca actggcctgc gatgccctgc agatggcgct
+      901 gtggcggcgt aagaggcccc ggaacgttat cgttcacacg gaccgtggag gccagtactg
+      961 ttcagcagat tatcaggcgc aactgaagcg gcataatctg cgtggaagta tgagcgcaaa
+     1021 aggttgctgc tacgataatg cctgcgtgga aagcttcttt cattcgctga aagtggaatg
+     1081 tatccatgga gaacacttta tcagccggga aataatgcgg gcaacggtgt ttaattatat
+     1141 cgaatgtgat tacaatcggt ggcggcggca cagttggtgt ggcggcctca gtccggaaca
+     1201 atttgaaaac aagaacctcg cttaggcctg tgtccatatt acgtgggtag gatca
+//

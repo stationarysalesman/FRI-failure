@@ -1,0 +1,38 @@
+LOCUS       IS1                      768 bp ds-DNA     linear       30-APR-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     CDS             56..331
+                     /label="insA-1 CDS (IS1 repressor protein InsA)"
+                     /ApEinfo_revcolor=#b7e6d7
+                     /ApEinfo_fwdcolor=#b7e6d7
+     gene            56..331
+                     /label="insA-1 gene"
+                     /ApEinfo_revcolor=#b4abac
+                     /ApEinfo_fwdcolor=#b4abac
+     gene            250..753
+                     /label="insB-1 gene"
+                     /ApEinfo_revcolor=#faac61
+                     /ApEinfo_fwdcolor=#faac61
+     mobile_element  1..768
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#ffef86
+                     /ApEinfo_fwdcolor=#ffef86
+     CDS             250..753
+                     /label="insB-1 CDS (IS1 transposase InsAB')"
+                     /ApEinfo_revcolor=#faac61
+                     /ApEinfo_fwdcolor=#faac61
+ORIGIN
+        1 ggtgatgctg ccaacttact gatttagtgt atgatggtgt ttttgaggtg ctccagtggc
+       61 ttctgtttct atcagctgtc cctcctgttc agctactgac ggggtggtgc gtaacggcaa
+      121 aagcaccgcc ggacatcagc gctatctctg ctctcactgc cgtaaaacat ggcaactgca
+      181 gttcacttac accgcttctc aacccggtac gcaccagaaa atcattgata tggccatgaa
+      241 tggcgttgga tgccgggcaa cagcccgcat tatgggcgtt ggcctcaaca cgattttacg
+      301 tcacttaaaa aactcaggcc gcagtcggta acctcgcgca tacagccggg cagtgacgtc
+      361 atcgtctgcg cggaaatgga cgaacagtgg ggctatgtcg gggctaaatc gcgccagcgc
+      421 tggctgtttt acgcgtatga cagtctccgg aagacggttg ttgcgcacgt attcggtgaa
+      481 cgcactatgg cgacgctggg gcgtcttatg agcctgctgt caccctttga cgtggtgata
+      541 tggatgacgg atggctggcc gctgtatgaa tcccgcctga agggaaagct gcacgtaatc
+      601 agcaagcgat atacgcagcg aattgagcgg cataacctga atctgaggca gcacctggca
+      661 cggctgggac ggaagtcgct gtcgttctca aaatcggtgg agctgcatga caaagtcatc
+      721 gggcattatc tgaacataaa acactatcaa taagttggag tcattacc
+//

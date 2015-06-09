@@ -1,0 +1,32 @@
+LOCUS       IS10R                   1329 bp ds-DNA     linear       05-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     mobile_element  1..1329
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#d59687
+                     /ApEinfo_fwdcolor=#d59687
+ORIGIN
+        1 ctgatgaatc ccctaatgat tttggtaaaa atcattaagt taaggtggat acacatcttg
+       61 tcatatgatc aaatggtttc gcgaaaaatc aataatcaga caacaagatg tgcgaactcg
+      121 atattttaca cgactctctt taccaattct gccccgaatt acacttaaaa cgactcaaca
+      181 gcttaacgtt ggcttgccac gcattacttg actgtaaaac tctcactctt accgaacttg
+      241 gccgtaacct gccaaccaaa gcgagaacaa aacataacat caaacgaatc gaccgattgt
+      301 taggtaatcg tcacctccac aaagagcgac tcgctgtata ccgttggcat gctagcttta
+      361 tctgttcggg caatacgatg cccattgtac ttgttgactg gtctgatatt cgtgagcaaa
+      421 aacgacttat ggtattgcga gcttcagtcg cactacacgg tcgttctgtt actctttatg
+      481 agaaagcgtt cccgctttca gagcaatgtt caaagaaagc tcatgaccaa tttctagccg
+      541 accttgcgag cattctaccg agtaacacca caccgctcat tgtcagtgat gctggcttta
+      601 aagtgccatg gtataaatcc gttgagaagc tgggttggta ctggttaagt cgagtaagag
+      661 gaaaagtaca atatgcagac ctaggagcgg aaaactggaa acctatcagc aacttacatg
+      721 atatgtcatc tagtcactca aagactttag gctataagag gctgactaaa agcaatccaa
+      781 tctcatgcca aattctattg tataaatctc gctctaaagg ccgaaaaaat cagcgctcga
+      841 cacggactca ttgtcaccac ccgtcaccta aaatctactc agcgtcggca aaggagccat
+      901 gggttctagc aactaactta cctgttgaaa ttcgaacacc caaacaactt gttaatatct
+      961 attcgaagcg aatgcagatt gaagaaacct tccgagactt gaaaagtcct gcctacggac
+     1021 taggcctacg ccatagccga acgagcagct cagagcgttt tgatatcatg ctgctaatcg
+     1081 ccctgatgct tcaactaaca tgttggcttg cgggcgttca tgctcagaaa caaggttggg
+     1141 acaagcactt ccaggctaac acagtcagaa atcgaaacgt actctcaaca gttcgcttag
+     1201 gcatggaagt tttgcggcat tctggctaca caataacaag ggaagactta ctcgtggctg
+     1261 caaccctact agctcaaaat ttattcacac atggttacgc tttggggaaa ttatgagggg
+     1321 atctctcag
+//

@@ -1,0 +1,48 @@
+LOCUS       IS2                     1331 bp ds-DNA     linear       01-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     mobile_element  1..1331
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#84b0dc
+                     /ApEinfo_fwdcolor=#84b0dc
+     CDS             415..1320
+                     /label="insD-1 CDS (IS2 insertion element transposase InsAB')"
+                     /ApEinfo_revcolor=#d59687
+                     /ApEinfo_fwdcolor=#d59687
+     gene            415..1320
+                     /label="insD-1 gene"
+                     /ApEinfo_revcolor=#b4abac
+                     /ApEinfo_fwdcolor=#b4abac
+     gene            47..457
+                     /label="insC-1 gene"
+                     /ApEinfo_revcolor=#b1ff67
+                     /ApEinfo_fwdcolor=#b1ff67
+     CDS             47..457
+                     /label="insC-1 CDS (IS2 insertion element repressor InsA)"
+                     /ApEinfo_revcolor=#ffef86
+                     /ApEinfo_fwdcolor=#ffef86
+ORIGIN
+        1 tagactggcc ccctgaatct ccagacaacc aatatcactt aaataagtga tagtcttaat
+       61 actagttttt agactagtca ttggagaaca gatgattgat gtcttagggc cggagaaacg
+      121 cagacggcgt accacacagg aaaagatcgc aattgttcag cagagctttg aaccggggat
+      181 gacggtctcc ctcgttgccc ggcaacatgg tgtagcagcc agccagttat ttctctggcg
+      241 taagcaatac caggaaggaa gtcttactgc tgtcgccgcc ggagaacagg ttgttcctgc
+      301 ctctgaactt gctgccgcca tgaagcagat taaagaactc cagcgcctgc tcggcaagaa
+      361 aacgatggaa aatgaactcc tcaaagaagc cgttgaatat ggacgggcaa aaaagtggat
+      421 agcgcacgcg cccttattgc ccggggatgg ggagtaagct tagtcagccg ttgtctccgg
+      481 gtgtcgcgtg cgcagttgca cgtcattctc agacgaaccg atgactggat ggatggccgc
+      541 cgcagtcgtc acactgatga tacggatgtg cttctccgta tacaccatgt tatcggagag
+      601 ctgccaacgt atggttatcg tcgggtatgg gcgctgcttc gcagacaggc agaacttgat
+      661 ggtatgcctg cgatcaatgc caaacgtgtt taccggatca tgcgccagaa tgcgctgttg
+      721 cttgagcgaa aacctgctgt accgccatcg aaacgggcac atacaggcag agtggccgtg
+      781 aaagaaagca atcagcgatg gtgctctgac gggttcgagt tctgctgtga taacggagag
+      841 agactgcgtg tcacgttcgc gctggactgc tgtgatcgtg aggcactgca ctgggcggtc
+      901 actaccggcg gcttcaacag tgaaacagta caggacgtca tgctgggagc ggtggaacgc
+      961 cgcttcggca acgatcttcc gtcgtctcca gtggagtggc tgacggataa tggttcatgc
+     1021 taccgggcta atgaaacacg ccagttcgcc cggatgttgg gacttgaacc gaagaacacg
+     1081 gcggtgcgga gtccggagag taacggaata gcagagagct tcgtgaaaac gataaagcgt
+     1141 gactacatca gtatcatgcc caaaccagac gggttaacgg cagcaaagaa ccttgcagag
+     1201 gcgttcgagc attataacga atggcatccg catagtgcgc tgggttatcg ctcgccacgg
+     1261 gaatatctgc ggcagcgggc ttgtaatggg ttaagtgata acagatgtct ggaaatatag
+     1321 gggcaaatcc a
+//

@@ -1,0 +1,47 @@
+LOCUS       IS609                   1748 bp ds-DNA     linear       01-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     mobile_element  1..1748
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#c7b0e3
+                     /ApEinfo_fwdcolor=#c7b0e3
+     CDS             complement(44..1252)
+                     /label="ydcM CDS (predicted transposase)"
+                     /ApEinfo_revcolor=#b1ff67
+                     /ApEinfo_fwdcolor=#b1ff67
+     gene            complement(44..1252)
+                     /label="ydcM gene"
+                     /ApEinfo_revcolor=#d6b295
+                     /ApEinfo_fwdcolor=#d6b295
+ORIGIN
+        1 ttgacatcct ccacgccctg aaggacgtgg atccctgcta cgttcaggct gtcgcctgaa
+       61 tcatttcggt gggttcctgc ttcaacgggc ggcctgactg caccatctct ccacaggcaa
+      121 gaacggcgtg ccccgccgct aaaatgttgc gagcgccatt tacatcggcg ttcgctgtat
+      181 atccacatac ctggcatctg aatttacttt gtgacaggcg gttctctttc gctgtatgac
+      241 cacagtacgc gcaacgctgg cttgtatacg ctggcggaac agcaagcacc tgaccgccac
+      301 gccagagctg cttatacgca agctggcggc gcatttcata ccagccctga tccagtatcg
+      361 aacggtttaa acctgatttt gcccggacat tgcgccccgg ctggctgacc gtacccgctg
+      421 ctgactttga catgttgctg accttcaaat cctcaatgac tatcattgcg tggtttttgc
+      481 tgacggccgt tgtgactttg tgaaggtagt ccctgcggat atttgcgata caggaatgca
+      541 gtcgctgtat tttgcgtttc tgcttttgcc agttgttgct gaatttgacc ttgcggctta
+      601 actgtcgctg aagtctcgcc agcttcttct ggtttttctg aaaactgttt acaggctcaa
+      661 agactgtgcc atctgacagc gtggcgagtt tagccacgcc agcatccagc ccgaccattg
+      721 atgctgaagg gtgaaccgga gttgatactt cactttctgt ctgaatactg atgtaccact
+      781 taccgcagga ctggctgaca gtgacatttt tcacaacacc cgtgacctga cggctgttcc
+      841 ggtagcgcat ccagcccagt ttcggcagaa aaatacggct gttttcctga tcgagcttaa
+      901 cgccctgcgg gtagcggaat gcatcattct gtccccgctt tttgaatcgg ggaaaagcag
+      961 cccgcttccg gaagaagttt ttgtaagccc gctcaaggtc tttcagtgac tgttgcaatg
+     1021 gctgtgaggg agaatcttta agccattgcg tttcagtggc atttttccac tcaaccagcc
+     1081 aggaagccat tttcccgtaa gggatgtatt tattaccggc ctcatgattc tcattctgac
+     1141 gtgccagagc acgattgaaa acgaaacgac atgcgcctgc gaagcgcctc atttcacact
+     1201 cctgttgacc accgggtctt aactggaatt taaatgcctg taatcgtttc acaggtcaaa
+     1261 tgatactttg gtctgtgaaa aaagaaaccg atatccggcg tggaaggcat tgtgttttcc
+     1321 tgatgcatgt tcacctgctc tttgtcacca gataccgacg ccagattttt gaccatgacg
+     1381 cgacagaaaa actacgcact tacttttcaa atgtatgtgc tgattttgaa gctgaactgg
+     1441 ttgaaatgga tggcgaacca gatcacgtcc atttgttaat taactatcct cccaaactgg
+     1501 cgatatccag tctggtaaac agcctcaaag gcgtatcggg taggtgactg cgacgagatc
+     1561 gaccagatat tgcattcagg tattactaca aaggcgtttt gtggagtcct ggctattttg
+     1621 ccagtagctg cggaggtgcg ccaatatccg tcatccgcca atacattgaa caacagcaaa
+     1681 cacctggtca ggtggaaaac cgcgccttat atccccgccc tgaaggatgg ggttttacgg
+     1741 cgcaccgg
+//

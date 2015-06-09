@@ -1,0 +1,37 @@
+LOCUS       IS5                     1195 bp ds-DNA     linear       01-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     mobile_element  1..1195
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#ffef86
+                     /ApEinfo_fwdcolor=#ffef86
+     CDS             33..1049
+                     /label="insH-1 CDS (CP4-6 prophage; IS5 transposase and trans-activator)"
+                     /ApEinfo_revcolor=#faac61
+                     /ApEinfo_fwdcolor=#faac61
+     gene            33..1049
+                     /label="insH-1 gene"
+                     /ApEinfo_revcolor=#85dae9
+                     /ApEinfo_fwdcolor=#85dae9
+ORIGIN
+        1 ggaaggtgcg aacaagtccc tgatatgaga tcatgtttgt catctggagc catagaacag
+       61 ggttcatcat gagtcatcaa cttaccttcg ccgacagtga attcagcagt aagcgccgtc
+      121 agaccagaaa agagattttc ttgtcccgca tggagcagat tctgccatgg caaaacatgg
+      181 tggaagtcat cgagccgttt taccccaagg ctggtaatgg ccggcgacct tatccgctgg
+      241 aaaccatgct acgcattcac tgcatgcagc attggtacaa cctgagcgat ggcgcgatgg
+      301 aagatgctct gtacgaaatc gcctccatgc gtctgtttgc ccggttatcc ctggatagcg
+      361 ccttgccgga ccgcaccacc atcatgaatt tccgccacct gctggagcag catcaactgg
+      421 cccgccaatt gttcaagacc atcaatcgct ggctggccga agcaggcgtc atgatgactc
+      481 aaggcacctt ggtcgatgcc accatcattg aggcacccag ctcgaccaag aacaaagagc
+      541 agcaacgcga tccggagatg catcagacca agaaaggcaa tcagtggcac tttggcatga
+      601 aggcccacat tggtgtcgat gccaagagtg gcctgaccca cagcctggtc accaccgcgg
+      661 ccaacgagca tgacctcaat cagctgggta atctgctgca tggagaggag caatttgtct
+      721 cagccgatgc cggctaccaa ggggcgccac agcgcgagga gctggccgag gtggatgtgg
+      781 actggctgat cgccgagcgc cccggcaagg taagaacctt gaaacagcat ccacgcaaga
+      841 acaaaacggc catcaacatc gaatacatga aagccagcat ccgggccagg gtggagcacc
+      901 catttcgcat catcaagcga cagttcggct tcgtgaaagc cagatacaag gggttgctga
+      961 aaaacgataa ccaactggcg atgttattca cgctggccaa cctgtttcgg gcggaccaaa
+     1021 tgatacgtca gtgggagaga tctcactaaa aactggggat aacgccttaa atggcgaaga
+     1081 aacggtctaa ataggctgat tcaaggcatt tacgggagaa aaaatcggct caaacatgaa
+     1141 gaaatgaaat gactgagtca gccgagaaga atttccccgc ttattcgcac cttcc
+//

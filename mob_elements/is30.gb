@@ -1,0 +1,38 @@
+LOCUS       IS30                    1221 bp ds-DNA     linear       30-APR-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     CDS             63..1214
+                     /label="insI-1 CDS (CP4-6 prophage; IS30 transposase)"
+                     /ApEinfo_revcolor=#faac61
+                     /ApEinfo_fwdcolor=#faac61
+     mobile_element  1..1221
+                     /label="mobile_element"
+                     /ApEinfo_revcolor=#84b0dc
+                     /ApEinfo_fwdcolor=#84b0dc
+     gene            63..1214
+                     /label="insI-1 gene"
+                     /ApEinfo_revcolor=#ff9ccd
+                     /ApEinfo_fwdcolor=#ff9ccd
+ORIGIN
+        1 tgtagattca attggtcaac gcaacagtta tgtgaaaaca tggggttgcg gaggtttttt
+       61 gaatgagacg aacatttaca gcagaggaaa aagcctctgt ttttgaacta tggaagaacg
+      121 gaacaggctt cagtgaaata gcgaatatcc tgggttcaaa acccggaacg atcttcacta
+      181 tgttaaggga tactggcggc ataaaacccc atgagcgtaa gcgggctgta gctcacctga
+      241 cactgtctga gcgcgaggag atacgagctg gtttgtcagc caaaatgagc attcgtgcga
+      301 tagctactgc gctgaatcgc agtccttcga cgatctcacg tgaagttcag cgtaatcggg
+      361 gcagacgcta ttacaaagct gttgatgcta ataaccgagc caacagaatg gcgaaaaggc
+      421 caaaaccgtg cttactggat caaaatttac cattgcgaaa gcttgttctg gaaaagctgg
+      481 agatgaaatg gtctccagag caaatatcag gatggttaag gcgaacaaaa ccacgtcaaa
+      541 aaacgctgcg aatatcacct gagacaattt ataaaacgct gtactttcgt agccgtgaag
+      601 cgctacacca cctgaatata cagcatctgc gacggtcgca tagccttcgc catggcaggc
+      661 gtcatacccg caaaggcgaa agaggtacga ttaacatagt gaacggaaca ccaattcacg
+      721 aacgttcccg aaatatcgat aacagacgct ctctggggca ttgggagggc gatttagtct
+      781 caggtacaaa aaactctcat atagccacac ttgtagaccg aaaatcacgt tatacgatca
+      841 tcgttagact caggggcaaa gattctgtct cagtaaatca ggctcttacc gacaaattcc
+      901 tgagtttacc gtcagaactc agaaaatcac tgacatggga cagaggaatg gaactggcca
+      961 gacatctaga atttactgtc agcaccggcg ttaaagttta cttctgcgat cctcagagtc
+     1021 cttggcagcg gggaacaaat gagaatacaa atgggctaat tcggcagtac tttcctaaaa
+     1081 agacatgtct tgcccaatat actcaacatg aactagatct ggttgctgct cagctaaaca
+     1141 acagaccgag aaagacactg aagttcaaaa caccgaaaga gataattgaa aggggtgttg
+     1201 cattgacaga ttgaatctac a
+//
