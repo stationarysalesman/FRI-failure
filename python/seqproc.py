@@ -64,6 +64,7 @@ read_list = [] # will contain Sanger reads
 plasmid = [] # will contain plasmid
 path = "../sequences/"
 for dirName, subdirList, fileList in os.walk(path):
+    print dirName, subdirList, fileList
     if (not subdirList):
         template_dir = dirName+"/templates"
         os.mkdir(template_dir) # this is where .fasta files to be aligned using MAFFT are saved

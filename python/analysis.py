@@ -5,10 +5,9 @@ Created on Mon Jun  1 13:45:07 2015
 @author: tyler
 """
 
-from Bio import SeqIO
 from Bio import AlignIO
 import os
-import re
+import datetime
 
  # determine number of repeats, if any
 def build_repeat_string(seq, x, mut_length):
@@ -19,32 +18,31 @@ def build_repeat_string(seq, x, mut_length):
     # now we must find the bounds of the read repeat sequence
     repeat_len = len(repeat_seq)
     start_index = x
-    read_start_index = start_index
     stop_index = x+repeat_len
-    print "start_index:", start_index
-    print "stop_index:", stop_index
-    print "repeat_len:", repeat_len
+   # print "start_index:", start_index
+   # print "stop_index:", stop_index
+   # print "repeat_len:", repeat_len
     skip = mut_length-1
         
     # first, we move toward the 5' end by repeat_len each iteration
     while (str(seq[start_index:start_index+repeat_len])
     == str(seq[start_index-repeat_len:start_index]) and start_index>0):
-        print seq[start_index:start_index+repeat_len], "equals",seq[start_index-repeat_len:start_index]
+        #print seq[start_index:start_index+repeat_len], "equals",seq[start_index-repeat_len:start_index]
         start_index -= repeat_len
     
-    print "new start_index:", start_index
+    #print "new start_index:", start_index
     
     # now, we move toward the 3' end in the same manner
     while (str(seq[stop_index-repeat_len:stop_index])
     == str(seq[stop_index:stop_index+repeat_len]) and (stop_index+repeat_len)<len(seq)):
-        print seq[stop_index-repeat_len],"equals",seq[stop_index:stop_index+repeat_len]
+        #print seq[stop_index-repeat_len],"equals",seq[stop_index:stop_index+repeat_len]
         
         stop_index += repeat_len
         
-    print "new stop_index:", stop_index
-    print "entire repeated sequence:", seq[start_index:stop_index]
+    #print "new stop_index:", stop_index
+    #print "entire repeated sequence:", seq[start_index:stop_index]
     repeat_ref_num = (stop_index-start_index)/repeat_len
-    print "repeat_ref_num:", repeat_ref_num
+    #print "repeat_ref_num:", repeat_ref_num
     if (repeat_ref_num == 1 and delta_units == 1):
             # not repeat mediated
         return ["", skip]       
@@ -80,26 +78,36 @@ def homology_trunc(alignments):
     """Return an index at which to truncate nt analysis based on
     sequence homology to mobile elements."""
     for alignment in alignments:
+        homolog_id = ""
+        start_index = 0
+        stop_index = 0
         seq_id = alignment[0].id
         seq_length = len(alignment[0].seq)
-        y = 0
-        z = 0
+        y = 0 # will hold stop index
+        z = 0 # reset every time a gap is encountered
         for x in range(len(alignment[0])):
             z = 0
+            temp_start_index = x
             while (alignment[0][x] != "-"):
+                # count how many nt match between Sanger read and any of the mob eles.
                 z += 1
                 x += 1
-            if (z > y): y = z
-    if (y > 100): return {seq_id: y}
-    else: return {seq_id: seq_length}
-def analyze(alignments, trunc_index_dict):
+            temp_stop_index = x
+            if (z > y): 
+                y = z
+                start_index = temp_start_index
+                stop_index = temp_stop_index
+    if (y > 100):
+        # determine which mobile element id matches
+        for a in alignment[a]:
+            if (alignment[a][start_index:stop_index] == alignment[0][start_index:stop_index]):
+               homolog_id = alignment[a].id 
+               return ({seq_id: y}, homolog_id) 
+    else: return ({seq_id: seq_length}, "")
+        
+def analyze(alignments, trunc_index_list):
     """Analyze alignment file and output a genomediff file."""
     mutation_list = list()
-    mutation_index = 1
-    evidence_list = list()
-    evidence_index = 1
-    purines = ["a", "g"]
-    pyrimidines = ["t", "c"]
     for alignment in alignments:
         alignment_length = len(alignment[0])
         plasmid_seq = alignment[0].seq              
@@ -108,6 +116,15 @@ def analyze(alignments, trunc_index_dict):
             read_seq_id = alignment[y].id
             # get start/stop indices for current sequence 
             stop_index = len(read_seq)-1
+            q = 0
+            for q in range(0, len(trunc_index_list)):
+                for w in range(0, len(trunc_index_list[q])):
+                    if (trunc_index_list[q][1] != ''):      
+                        # mobile element
+                        stop_index = trunc_index_list[q][w][read_seq_id]
+                        homolog_id = trunc_index_list[1]
+                        mutation_string = "MOB\t.\t.\t"+read_seq_id+"\t"+homolog_id
+                        mutation_list.append(mutation_string)
             while ((read_seq[stop_index] == "-") and (stop_index > 0)):
                 stop_index -= 1
             if (stop_index == 0):
@@ -120,36 +137,35 @@ def analyze(alignments, trunc_index_dict):
                 print "ERROR: start_index = length-1 for read sequence", read_seq_id
                 return
             if (start_index > stop_index):
-                print "ERROR: start_index > stop_index for read sequence", read_seq_id
+                print "ERROR: styearart_index > stop_index for read sequence", read_seq_id
                 return
             if (stop_index > alignment_length):
                 print "ERROR: stop_index > alignment_length for read sequence", read_seq_id
                 return
-            print "start_index:", start_index, "\nstop_index:", stop_index  
+            #print "start_index:", start_index, "\nstop_index:", stop_index  
             skip = 0
-            for x in range(start_index, stop_index+1):   
+            
+            for x in range(start_index, stop_index):   
                 if (skip):
                     skip -= 1
                     continue
                 
                 plasmid_nt = plasmid_seq[x]
-                plasmid_nt_grp = plasmid_nt in purines
                 read_nt = alignment[y][x]
-                read_nt_grp = read_nt in purines
                 if (read_nt != plasmid_nt):
                     if (read_nt == "n"):
                         # useless!
-                        print "Encountered 'n' in read", read_seq_id, "at nt", x
+                       # print "Encountered 'n' in read", read_seq_id, "at nt", x
                         continue
                     elif (read_nt == "-" and plasmid_nt != "-"):
                         # deletion
-                        print "Deletion at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
+                        #print "Deletion at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
                         z = x
                         while (read_seq[z] == "-"):
                             z += 1
                         del_length = z-x
-                        print "del_length:", del_length
-                        mutation_string = ("DEL\t" +str(mutation_index) + "\t" +
+                       # print "del_length:", del_length
+                        mutation_string = ("DEL\t.\t.\t"+
                         str(alignment[y].id) + "\t" +
                         str(x-start_index) + "\t" + str(del_length))
                         errata = build_repeat_string(plasmid_seq, x, del_length)
@@ -157,17 +173,16 @@ def analyze(alignments, trunc_index_dict):
                             mutation_list.append(mutation_string+errata[0])
                         else:
                             mutation_list.append(mutation_string)
-                        mutation_index += 1
                         skip = errata[1] # number of nt to skip   
                             
                     elif (plasmid_nt == "-" and read_nt != "-"):
-                        print "Insertion at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
+                       # print "Insertion at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
                         z = x
                         while (plasmid_seq[z] == "-"):
                             z += 1
                         ins_length = z-x
-                        print "ins_length:", ins_length
-                        mutation_string = ("INS\t" +str(mutation_index) + "\t" +
+                       # print "ins_length:", ins_length
+                        mutation_string = ("INS\t.\t.\t"+
                         str(alignment[y].id) + "\t" +
                         str(x-start_index) + "\t" + str(ins_length))
                         errata = build_repeat_string(read_seq, x, ins_length)
@@ -175,24 +190,22 @@ def analyze(alignments, trunc_index_dict):
                             mutation_list.append(mutation_string+errata[0])
                         else:
                             mutation_list.append(mutation_string)
-                        mutation_index += 1
                         skip = errata[1]
                           
-                    elif (read_nt_grp != plasmid_nt_grp):
-                        print "Transversion at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
-                        evidence_string = ("RA\t"+evidence_index+"\t\t"+read_seq_id+"\t"+(x-start_index)+
-                                        "\t\t"+plasmid_nt+"\t"+read_nt)
-                        mutation_string = ("SNP\t"+evidence_index+"\t") #NOT FINISHED
-                    elif (read_nt != plasmid_nt):
-                        print "Transition at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
-                    
-    print plasmid_seq            
-    for mut in mutation_list:
-        print mut        
-    return
-    
+                    else:
+                        #print "SNP at nt", x, ": plasmid:", plasmid_nt, ", read:", read_nt
+                        
+                        mutation_string = "SNP\t.\t.\t"+read_seq_id+"\t"+str(x-start_index)+"\t"+read_nt
+                        mutation_list.append(mutation_string)
+ 
+    return mutation_list
+
+# Create directory that will contain genome diff files
+date_time_string = str(datetime.date.today())
+output_dir = "../genomediff_" + date_time_string 
+os.mkdir(output_dir)
 path = "../sequences/"
-trunc_index_dict = dict()
+trunc_index_list = list()
 for dirName, subdirList, fileList in os.walk(path):
     for subdir in subdirList:
         for dirName2, subdirList2, filelist2 in os.walk(path + subdir):
@@ -204,11 +217,11 @@ for dirName, subdirList, fileList in os.walk(path):
                                 # read/mobile element alignment
                                 # need to determine if any homology to do nt analysis
                                 rm_alignments = AlignIO.parse(path+subdir+"/"+subdir2+"/"+f, "fasta")
-                                trunc_index_dict.update(homology_trunc(rm_alignments))
-                                print trunc_index_dict
+                                trunc_index_list.append(homology_trunc(rm_alignments))
+                                #print trunc_index_list
                             else:
                                 continue
-                            
+   
 for dirName, subdirList, fileList in os.walk(path):
    for subdir in subdirList:
         for dirName2, subdirList2, filelist2 in os.walk(path + subdir):
@@ -218,9 +231,17 @@ for dirName, subdirList, fileList in os.walk(path):
                         for f in filelist3:  
                             if "pr" in f:
                                 alignment_seqs = AlignIO.parse(path+subdir+"/"+subdir2+"/"+f, "fasta")
-                                analyze(alignment_seqs, trunc_index_dict)
-                            else:
-                                # temporary - remove in release
-                                alignment_seqs = AlignIO.parse(path+subdir+"/"+subdir2+"/"+f, "fasta")
-                                analyze(alignment_seqs, trunc_index_dict)
+                                file_input = analyze(alignment_seqs, trunc_index_list)
+                                # Create GenomeDiff file                                
+                                x = 0
+                                while (f[x] != "."): x += 1
+                                temp = f[:x]
+                                temp += ".gd"
+                                with open(output_dir+"/"+temp, "w") as out_file:
+                                    out_file.write("#=GENOME_DIFF 1.0\n")
+                                    for mutation in file_input:
+                                        out_file.write(mutation, "\n")
+                                
+                               
+
         
