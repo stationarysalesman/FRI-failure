@@ -107,7 +107,6 @@ def analyze_seq(template, target, start_index, stop_index):
     template_seq = template.seq
     target_seq = target.seq
     target_id = target.id    
-
   #  print "Analyzing", target_id,"against element", template.id
   #  print "start:", start_index
   #  print "stop:", stop_index
@@ -184,7 +183,6 @@ def analyze_seq(template, target, start_index, stop_index):
                 key = hash(mutation_string)
                 if not(key in mutation_dict):
                     mutation_dict[key] = mutation_string
-   
     return mutation_dict
 
 def mob_info(alignments):
@@ -203,31 +201,21 @@ def mob_info(alignments):
         start = max(mob_indices[0], read_indices[0])
         stop = min(mob_indices[1], read_indices[1])
         # call analyze_seq on our read/mobile element to get info about sequence homology
-        temp = analyze_seq(mob, read, start, stop)
-        if ("is609" in mob.id.lower()):
-            print "observe temp:"
-            for k in sorted(temp.keys()):
-                print temp[k]
-        mob_mut_list.append([read.id, mob.id, temp, start]) 
-
+        mob_mut_list.append([read.id, mob.id, analyze_seq(mob, read, start, stop), start])    
     curr_lst = list()
     curr_len = 9999999 # do not use this value for "big data" alignments/analyses
     for lst in mob_mut_list: # find the mobile element with the least number of mutations
-        if (len(lst[2].keys()) < curr_len):
-            print "new list"
-            curr_len = len(lst[2].keys())
+        if (len(lst[2]) < curr_len):
+            curr_len = len(lst[2])
             curr_lst = lst
-    if (len(curr_lst[2].keys())< 50): # is the mobile element actually homologous?
-        del(mob_mut_list)
+    if (len(curr_lst[2])< 50): # is the mobile element actually homologous?
         return curr_lst
-    else: print "list too big.."
-   
     return                                     
     
 def main():
     date_time_string = str(datetime.datetime.today())
-    #output_dir = "../genomediff_" + date_time_string 
-   # os.mkdir(output_dir)
+    output_dir = "../genomediff_" + date_time_string 
+    os.mkdir(output_dir)
     path = "../alignments/"
     mob_evidence_dict = dict()
     if not(os.access(path, os.F_OK)):
@@ -236,22 +224,19 @@ def main():
     
     for dirName, subdirList, fileList in os.walk(path):
         for f in fileList:
-            if "rm" in f and "md" in f:
+            if "rm" in f:
                 # read/mobile element alignment
                 # need to determine if any homology to do nt analysis
                 rm_alignments = AlignIO.read(path+f, "fasta")
-                for a in rm_alignments:
-                    print a.id
                 evidence = mob_info(rm_alignments)
                 if not(evidence is None):
                     key = evidence[0]
                     value = [evidence[1], evidence[2], evidence[3]]
                     mob_evidence_dict[key]= value
-                else: print "bad things"
 
     for dirName, subdirList, fileList in os.walk(path):
         for f in fileList:
-            if "pr" in f and "md" in f:  # plasmid/read alignment 
+            if "pr" in f:  # plasmid/read alignment 
                 mutation_dict = dict()
                 pr_alignments = AlignIO.read(path+f, "fasta")
                 plasmid_indices = get_indices(pr_alignments[0])
@@ -277,11 +262,11 @@ def main():
                     if (mutation_dict_2):
                         mutation_dict.update(mutation_dict_2)
                 name = pr_alignments[0].id + ".gd"
-             #   with open(output_dir+"/"+name, "w") as out_file:
-                #    out_file.write("#=GENOME_DIFF 1.0\n")
-                #    for v in mutation_dict.values():
-                #        out_file.write(v + "\n")
-
+                with open(output_dir+"/"+name, "w") as out_file:
+                    out_file.write("#=GENOME_DIFF 1.0\n")
+                    for v in mutation_dict.values():
+                        out_file.write(v + "\n")
+  
                 del(mutation_dict)
     return
 main()

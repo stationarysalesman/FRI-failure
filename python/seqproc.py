@@ -34,16 +34,17 @@ def trim_n(seq):
                 
                 
     # Trim 3' end
-    i = 0
+    j = i
     done = False
-    while (i < len(seq.seq)) and not(done):
-        if (((seq.letter_annotations.values()[0][i]+
-              seq.letter_annotations.values()[0][i+1]+
-              seq.letter_annotations.values()[0][i+2])/3) 
+    while (j < len(seq.seq)) and not(done):
+        if (((seq.letter_annotations.values()[0][j]+
+              seq.letter_annotations.values()[0][j+1]+
+              seq.letter_annotations.values()[0][j+2])/3) 
               < 10):
-                 seq = seq[:i]
+                 seq = seq[i:j]
                  done = True
-        i += 1
+                 break
+        j += 1
     return seq
             
             
@@ -56,32 +57,43 @@ mob_list = []
 mob_path = "../mob_elements/"
 for dirName, subdirList, fileList in os.walk(mob_path):
     for f in fileList:
-         mob_list.append(next(SeqIO.parse(dirName+"/"+f, "genbank")))
+        mob_list.append(SeqIO.read(dirName+f, "genbank"))
 
-# Get list of plasmid/sanger reads
-# We will do this for every dataset
-read_list = [] # will contain Sanger reads
-plasmid = [] # will contain plasmid
-path = "../sequences/"
-for dirName, subdirList, fileList in os.walk(path):
-    print dirName, subdirList, fileList
-    if (not subdirList):
-        template_dir = dirName+"/templates"
-        os.mkdir(template_dir) # this is where .fasta files to be aligned using MAFFT are saved
-        a = re.split("/", dirName)
-        name= a[-1] + ".fasta" #we will name all analysis files based on dir name
-        for f in fileList:
-            if ".gb" in f: # this should be plasmid/template
-                plasmid.append(next(SeqIO.parse(dirName+"/"+f, "genbank"))) #get GenBank file from sequences directory
-            elif ("VF" in f) or ("VR" in f): # these should be Sanger reads
-                read_file = next(SeqIO.parse(dirName+"/"+f, "abi"))
-                trimmed_file = trim_n(read_file)
-                read_list.append(trimmed_file) #add trimmed Sanger read files
-        plasmid_read_list = plasmid + read_list
+
+read_path = "../reads/"
+plasmid_path = "../plasmids/"
+template_path = "../templates/" # location of .fasta files that will be run through MAFFT
+
+os.mkdir(template_path)
+
+for dirName, subdirList, fileList in os.walk(plasmid_path):
+    for plasmid_file in fileList:
+        read_list = list()
+        initials = ""
+        plasmid_read_list = [] # will contain plasmid sequence and all Sanger reads
+        plasmid = SeqIO.read(plasmid_path+plasmid_file, "genbank") # object containing plasmid info     
+        temp = plasmid_file   
+        dest = []
+        dest = re.split("_", temp) #get initials from plasmid file name         
+        initials = dest[0].lower()
+        for dirName2, subdirList2, fileList2 in os.walk(read_path):
+            for read_file in fileList2:
+                if (initials in read_file.lower()):
+                    out_file = SeqIO.read(read_path+read_file, "abi")
+                    trimmed_file = trim_n(out_file) # trim n's
+                    read_list.append(trimmed_file)
+                   
+    # At this point we have a list of all Sanger reads corresponding to our current plasmid file.
+    # Ends have been trimmed of N's. 
+        plasmid_read_list.append(plasmid)
+        plasmid_read_list += read_list
+   
         for i, sequence in enumerate(read_list):
             newList = list()
             newList.append(sequence)
             newList += mob_list
-            SeqIO.write(newList, template_dir+"/rm"+str(i)+"_"+name, "fasta")
-            del(newList)
-        SeqIO.write(plasmid_read_list, template_dir+"/pr_"+name, "fasta")
+            SeqIO.write(newList, template_path+"/rm"+str(i)+"_"+initials, "fasta")
+            del(newList)                
+        SeqIO.write(plasmid_read_list, template_path+"/pr_"+initials, "fasta")
+        del(read_list)
+        del(plasmid_read_list)

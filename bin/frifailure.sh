@@ -7,34 +7,27 @@
 
 # Execute seqproc.py
 # This script creates the FASTA files that will be used by MAFFT
+
 python ../python/seqproc.py
 
 
-#Go through all directories and create relevant alignments with MAFFT
-cd ../sequences/
-SCRIPT_DIR=$(readlink -f ${0%/*})
+# All files that need to be aligned with MAFFT are in the templates folder
 
-for dir in $SCRIPT_DIR/*
+cd ../
+PROJECT_DIR=$(readlink -f ${0%/*}) # neat trick to get abolute path from bash
+ALIGN_DIR=$PROJECT_DIR/alignments/
+TEMPLATE_DIR=$PROJECT_DIR/templates/
+cd $TEMPLATE_DIR
+
+
+mkdir $ALIGN_DIR # Create directory to store alignment output from MAFFT
+
+for file in $PROJECT_DIR/templates/*
 do
-    echo "Making directory in $dir/alignments"
-    mkdir $dir/alignments
-    for subdir in $dir/*
-    do
-	if [ -d $subdir ] && [ $subdir = "$dir/templates" ]
-	    then 
-       	    for file in $subdir/*
-       	    do
-		TEMP=$(basename $file)
-		ALIGN="alignment_$TEMP"
-		file_loc=$dir/templates/$TEMP
-		file_dest=$dir/alignments/$ALIGN
-		echo "Running mafft on $file_loc and $file_dest"
-		mafft $file_loc > $file_dest
-	    done
-	    
-	fi
-    done
-    
+    TEMP=$(basename $file)
+    ALIGN="alignment_$TEMP"
+    file_dest=$ALIGN_DIR/$ALIGN
+    mafft $file > $file_dest
 done
 
 # Execute analysis.py
