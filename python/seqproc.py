@@ -64,7 +64,6 @@ read_path = "../reads/"
 plasmid_path = "../plasmids/"
 template_path = "../templates/" # location of .fasta files that will be run through MAFFT
 
-os.mkdir(template_path)
 
 for dirName, subdirList, fileList in os.walk(plasmid_path):
     for plasmid_file in fileList:
