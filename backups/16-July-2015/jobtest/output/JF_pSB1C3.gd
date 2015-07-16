@@ -1,0 +1,11 @@
+#=GENOME_DIFF 1.0
+MOB	.	.	JF3-VF	1813	IS10R_reverse_complement
+SNP	.	.	JF3-VF	113	a
+SNP	.	.	JF3-VF	132	g
+SNP	.	.	JF3-VF	141	t
+SNP	.	.	JF3-VF	142	a
+SNP	.	.	JF3-VF	145	c
+SNP	.	.	JF3-VF	164	g
+SNP	.	.	JF3-VF	510	t
+DEL	.	.	JF2-VF	1801	23
+MOB	.	.	JF1-VF	1813	IS10R
