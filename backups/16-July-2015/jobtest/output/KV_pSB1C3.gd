@@ -1,4 +1,0 @@
-#=GENOME_DIFF 1.0
-SNP	.	.	KV3-VF	2262	t
-DEL	.	.	KV3-VF	2791	1
-MOB	.	.	KV1-VF	2358	IS10R_reverse_complement
