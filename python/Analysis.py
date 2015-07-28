@@ -60,7 +60,7 @@ def seqproc(read_path, plasmid_path, template_path, mob_path):
         for f in fileList:
             mob_seq = SeqIO.read(dirName+f, "genbank")
             mob_rc = mob_seq.reverse_complement()
-            mob_rc.id = mob_seq.id + "_reverse_complement"
+            mob_rc.id = mob_seq.id + "-reverse_complement"
             mob_list.append(mob_seq)
             mob_list.append(mob_rc)
             
@@ -88,11 +88,10 @@ def seqproc(read_path, plasmid_path, template_path, mob_path):
                     temp_lst = [sequence, mob_seq]
                     SeqIO.write(temp_lst, template_path+"rm"+str(i)+str(j)+"_"+initials, "fasta")
                     del(temp_lst)
-            prlst = list()
-            prlst.append(plasmid)
-            prlst += read_list
-            SeqIO.write(prlst, template_path+"pr_"+initials, "fasta")
-            del(read_list)            
+            for i, sequence in enumerate(read_list):
+                temp_lst = [plasmid, sequence]
+                SeqIO.write(temp_lst, template_path+"pr"+str(i)+"_"+initials, "fasta")
+                del(temp_lst)
     return
     
 def get_seq_list(seq_path):
@@ -146,12 +145,13 @@ def get_sub_rep(seq_frag):
     return [seq_frag, 1]
     
  # determine number of repeats, if any
-def build_repeat_string(seq, x, mut_length):
+def build_repeat_string(seq, x, mut_length, ins):
     """Determine number of repeated sequences in seq.
     
     Starting from seq[x], determine the number of repeated units
     of length mut_length directly downstream or upstream of
-    seq[x:x+mut_length]."""
+    seq[x:x+mut_length].
+    arg: ins is boolean (1 -> insertion, 0 -> deletion"""
 
     seq_str = str.replace("-", "", str(seq))           
     sub_rep = get_sub_rep(seq_str[x:x+mut_length])
@@ -182,7 +182,11 @@ def build_repeat_string(seq, x, mut_length):
         return ["", skip]       
     elif (repeat_len * repeat_ref_num >= 5):
         # meets GenomeDiff criteria for RMD/RMI
-        repeat_new_copies = repeat_ref_num + delta_units
+        repeat_new_copies = 0
+        if (ins):
+            repeat_new_copies = repeat_ref_num + delta_units
+        else:
+            repeat_new_copies = repeat_ref_num - delta_units  
         errata = ("\trepeat_seq="+ repeat_seq + "\trepeat_len="+str(repeat_len)+"\t"+
         "repeat_ref_num="+str(repeat_ref_num)+"\trepeat_new_copies="+
         str(repeat_new_copies))
@@ -190,17 +194,23 @@ def build_repeat_string(seq, x, mut_length):
     else:
         return ["", skip]
         
-def analyze_seq(template, target, start_index, stop_index):
+def analyze_seq(template, target, start_index, stop_index, mutation_list):
     """Analyze an alignment between template and target
     between the given indices."""
-    mutation_list = list()
     template_seq = template.seq
     target_seq = target.seq
-    target_id = target.id       
+    template_id = template.id
+    if ("reverse_complement" in template_id):
+        template_id = (re.split("-", template_id))[0]
+    ins_count = 0 # total number of nts inserted  
+    del_count = 0 # total number of nts deleted    
     skip = 0   
-    read_start = 0
+    
     true_count = 0
     for x in range(start_index, stop_index):   
+        # calculate "true index" to map mutations onto reference sequence
+        # only things that affect index into reference are start index and total number of inserted bases
+        ref_index = x - ins_count
         if (skip):
             skip -= 1
             continue
@@ -219,17 +229,18 @@ def analyze_seq(template, target, start_index, stop_index):
                         ignore_count += 1                      
                     z += 1
                 del_length = z - x - ignore_count
+                del_count += del_length
                 mutation_string = ("DEL\t.\t.\t"+
-                str(target.id) + "\t" +
-                str(x-read_start) + "\t" + str(del_length))
-                errata = build_repeat_string(template_seq, x, del_length)
+                template_id + "\t" +
+                str(ref_index) + "\t" + str(del_length))
+                errata = build_repeat_string(template_seq, x, del_length, 0)
                 if (errata[0] != ""):
                     mutation_list.append(mutation_string+errata[0])
                 else:
                     mutation_list.append(mutation_string)                    
                 skip = errata[1] + ignore_count # number of nt to skip  
                 if ((skip + x) >= stop_index):
-                   return [mutation_list, Decimal(true_count)/Decimal(stop_index-start_index)]
+                   return Decimal(true_count)/Decimal(stop_index-start_index)
                     
             elif (template_nt == "-" and target_nt != "-"):
                 # insertion
@@ -240,24 +251,25 @@ def analyze_seq(template, target, start_index, stop_index):
                         ignore_count += 1
                     z += 1
                 ins_length = z - x - ignore_count
+                ins_count += ins_length
                 mutation_string = ("INS\t.\t.\t"+
-                str(target.id) + "\t" +
-                str(x-read_start) + "\t" + str(ins_length))
-                errata = build_repeat_string(target_seq, x, ins_length)
+                template_id + "\t" +
+                str(ref_index) + "\t" + str(target_seq[x:x+ins_length]))
+                errata = build_repeat_string(target_seq, x, ins_length, 1)
                 if (errata[0] != ""):
                     mutation_list.append(mutation_string+errata[0])
                 else:
                     mutation_list.append(mutation_string)
                 skip = errata[1] + ignore_count
                 if ((skip + x) >= stop_index):
-                   return [mutation_list, Decimal(true_count)/Decimal(stop_index-start_index)] 
+                   return Decimal(true_count)/Decimal(stop_index-start_index)
             else:
-                mutation_string = "SNP\t.\t.\t"+target_id+"\t"+str(x-read_start)+"\t"+target_nt
+                mutation_string = "SNP\t.\t.\t"+template_id+"\t"+str(ref_index)+"\t"+target_nt
                 mutation_list.append(mutation_string)
         else:
             true_count += 1
     validity = Decimal(true_count)/Decimal(stop_index-start_index) # percent nts that match in analysis frame
-    return [mutation_list, validity]
+    return validity
 
 def mob_info(alignments):
     """Returns a list of info about an alignment analysis based on
@@ -277,14 +289,16 @@ def mob_info(alignments):
         if ((stop - start) < 200): # not long enough for any meaningful analysis
             return
         # call analyze_seq on our read/mobile element to get info about sequence homology
-        temp = analyze_seq(mob, read, start, stop)
+        temp = list()
+        validity = analyze_seq(mob, read, start, stop, temp)
         """List contents:
             [0]: id of Sanger read
             [1]: id of mobile element
             [2]: list of mutations identified by analyzing mobile element
                  against Sanger read and validity score
-            [3]: offset from beginning of Sanger read at which to truncate analysis"""
-        mob_mut_list.append([read.id, mob.id, temp, start])
+            [3]: fraction of correctly matched residues
+            [4]: offset from beginning of Sanger read at which to truncate analysis"""
+        mob_mut_list.append([read.id, mob.id, temp, validity, start])
         
     curr_lst = list()
     curr_len = 9999999 # do not use this value for "big data" alignments/analyses
@@ -292,10 +306,10 @@ def mob_info(alignments):
     if not(mob_mut_list):
         return
     for lst in mob_mut_list: # find the mobile element with the least number of mutations      
-        if (len(lst[2][0]) < curr_len):
-            curr_len = len(lst[2][0])
+        if (len(lst[2]) < curr_len):
+            curr_len = len(lst[2])
             curr_lst = lst      
-    if (curr_lst and curr_lst[2][1] >= .45): # is the mobile element actually homologous?
+    if (curr_lst and curr_lst[3] >= .45): # is the mobile element actually homologous?
         del(mob_mut_list)
         return curr_lst
     
