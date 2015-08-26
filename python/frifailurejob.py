@@ -5,8 +5,11 @@ Created on Tue Jul  7 09:44:45 2015
 @author: tyler
 """
 
+#DNAplotlib
     
 from Bio import AlignIO
+#Legacy import
+#from Bio import SeqIO
 from jobmanager import jobmanager
 import os
 import subprocess
@@ -80,6 +83,19 @@ def phase_3(job):
     curr_output_path = job.master_output_dir
     Analysis = job.process_module
     
+    """As of 2015/8/26, we are no longer tracking mutations in the insertion region.
+    # Define dictionary to map reads to plasmids
+    pr_map = dict()
+    working_dir = job.output_dirs['templates']
+    for dirName, subdirList, fileList in os.walk(working_dir):
+        for f in fileList:
+            if ("pr" in f):
+                name_lst= list()
+                for seq in SeqIO.parse(working_dir+f, "fasta"):
+                    name_lst.append(seq.id)
+                pr_map[name_lst[1]] = name_lst[0] # map reads onto plasmids
+                del(name_lst)
+    """            
     mob_evidence_dict = dict()
     if not(os.access(alignment_path, os.F_OK)):
         err_str =  "Error: cannot access", alignment_path
@@ -99,6 +115,10 @@ def phase_3(job):
                 # read/mobile element alignment
                 # need to determine if any homology to do nt analysis
                 rm_alignments = AlignIO.read(alignment_path+f, "fasta")                
+               
+                """Legacy function call.               
+               evidence = Analysis.mob_info(rm_alignments, pr_map)
+               """
                 evidence = Analysis.mob_info(rm_alignments)
                 """Evidence contains
                 [0]: id of Sanger read
@@ -156,11 +176,16 @@ def phase_3(job):
                             
                     mutation_string = ("MOB\t.\t.\t"+pr_alignment[0].id+"\t"+str(stop-ins_count) + "\t" + 
                                         mob_ele_id + "\t" + str(strand))
-                    mutation_list.append(mutation_string)                                                
+                    mutation_list.append(mutation_string)          
+
+                    """As of 2015/8/26, we are no longer tracking mutations in the insertion region.                                      
+                    
                     if (mob_evidence_dict[key][1]): # append any mutations within the mobile element
-                        """mob_evidence_dict[key] is the list of mutations"""
+                        #mob_evidence_dict[key] is the list of mutations
                         for mutation in mob_evidence_dict[key][1]:
                             mutation_list.append(mutation)
+                            
+                    """
                 
                 mutation_list_2 = list() # will contain mutation in Sanger read
                 validity = Analysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list_2)
@@ -181,9 +206,7 @@ def phase_3(job):
     return
 def controller(job):
     """Controller for FRI-Failure Analysis pipeline."""
-    # Using module Analysis
-    Analysis = job.process_module    
-    
+    # Using module Analysis  
     #phase_1(job)
     #phase_2(job)
     phase_3(job)

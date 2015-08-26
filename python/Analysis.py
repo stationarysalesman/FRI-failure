@@ -202,6 +202,14 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
     template_id = template.id
     if ("reverse_complement" in template_id):
         template_id = (re.split("-", template_id))[0]
+    
+    """As of 2015/8/26, we are no longer tracking mutations in the insertion region.    
+    # Determine if we need a different name for our template
+    if not(template_default == "default"):
+        print "changing id to", template_default
+        template_id = template_default
+    """
+    
     ins_count = 0 # total number of nts inserted  
     del_count = 0 # total number of nts deleted    
     skip = 0   
@@ -276,6 +284,9 @@ def mob_info(alignments):
     sequence homology to mobile elements."""
     
     read = alignments[0] # This is the Sanger read
+    
+    #Legacy code    
+    #plasmid_id = pr_map[read.id] # This is the template name we want to write
     mob_mut_list = list()
     for r in range(1, len(alignments)):
         mob = alignments[r] # this is the current mobile element we want to analyze    
