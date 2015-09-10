@@ -5,7 +5,6 @@ Created on Tue Jul  7 09:44:45 2015
 @author: tyler
 """
 
-#DNAplotlib
     
 from Bio import AlignIO
 #Legacy import
@@ -84,6 +83,7 @@ def phase_3(job):
     Analysis = job.process_module
     
     """As of 2015/8/26, we are no longer tracking mutations in the insertion region.
+
     # Define dictionary to map reads to plasmids
     pr_map = dict()
     working_dir = job.output_dirs['templates']
@@ -207,17 +207,17 @@ def phase_3(job):
 def controller(job):
     """Controller for FRI-Failure Analysis pipeline."""
     # Using module Analysis  
-    #phase_1(job)
-    #phase_2(job)
+    phase_1(job)
+    phase_2(job)
     phase_3(job)
     return
     
 def main():
     input_dirs = dict()    
     output_dirs = dict()
-    input_dirs["mobile_elements"] = "/home/tyler/Documents/research/FRI-failure/mob_elements/" # location of mobile elements
-    input_dirs["reads"] = "/home/tyler/Documents/research/FRI-failure/reads/" # location of Sanger reads
-    input_dirs["plasmids"] = "/home/tyler/Documents/research/FRI-failure/plasmids/"
+    input_dirs["mobile_elements"] = "/home/tyler/Documents/research/FRI-Failure/mob_elements/" # location of mobile elements
+    input_dirs["reads"] = "/home/tyler/Documents/research/FRI-Failure/reads/" # location of Sanger reads
+    input_dirs["plasmids"] = "/home/tyler/Documents/research/FRI-Failure/plasmids/"
     output_dirs["templates"] = "templates/" # location of .fasta files that will be run through MAFFT
     output_dirs["alignments"] = "alignments/" # path to store and access alignments produced by MAFFT
     output_dirs["genomediff"] = "genomediff/" # path to store genomediff files

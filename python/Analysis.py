@@ -23,16 +23,11 @@ def trim_n(seq):
         if (seq.seq[i] != "N"):
             for j in range(10):
                 if (seq.seq[i+j+1] == "N"):
-                    skip = True
-                    i += 1
+                    i +=1
                     break
-            if (skip):
-                i += 1
-                skip = False
-                continue
-            elif not(skip):
-                seq = seq[i:]
-                done = True
+
+            seq = seq[i:]
+            done = True
         else:
             i += 1
                 
