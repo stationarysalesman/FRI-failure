@@ -215,9 +215,9 @@ def controller(job):
 def main():
     input_dirs = dict()    
     output_dirs = dict()
-    input_dirs["mobile_elements"] = "/home/tyler/Documents/research/FRI-Failure/mob_elements/" # location of mobile elements
-    input_dirs["reads"] = "/home/tyler/Documents/research/FRI-Failure/reads/" # location of Sanger reads
-    input_dirs["plasmids"] = "/home/tyler/Documents/research/FRI-Failure/plasmids/"
+    input_dirs["mobile_elements"] = "mob_elements/" # location of mobile elements
+    input_dirs["reads"] = "reads/" # location of Sanger reads
+    input_dirs["plasmids"] = "plasmids/"
     output_dirs["templates"] = "templates/" # location of .fasta files that will be run through MAFFT
     output_dirs["alignments"] = "alignments/" # path to store and access alignments produced by MAFFT
     output_dirs["genomediff"] = "genomediff/" # path to store genomediff files
