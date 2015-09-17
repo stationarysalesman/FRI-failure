@@ -1,0 +1,2 @@
+#=GENOME_DIFF 1.0
+INS	.	.	YH_pSB1C3	2593	c

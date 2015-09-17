@@ -13,24 +13,23 @@ import os
 import re
 from decimal import *
 
-def trim_n(seq):
+def trim_n(seq, phred_cutoff):
     """Trim the 5' and 3' ends of Sanger reads."""
     # Trim 5' end
     i = 0
     skip = False
     done = False
-    while (i < len(seq.seq)) and not(done):
-        if (seq.seq[i] != "N"):
-            for j in range(10):
-                if (seq.seq[i+j+1] == "N"):
-                    i +=1
-                    break
 
-            seq = seq[i:]
-            done = True
-        else:
-            i += 1
-                
+    while (i < len(seq.seq)) and not(done):
+        if (((seq.letter_annotations.values()[0][i]+
+              seq.letter_annotations.values()[0][i+1]+
+              seq.letter_annotations.values()[0][i+2])/3)
+              > 30):
+                 seq = seq[i:]
+                 done = True
+                 break
+        i += 1
+
                 
     # Trim 3' end
     j = i
@@ -39,14 +38,14 @@ def trim_n(seq):
         if (((seq.letter_annotations.values()[0][j]+
               seq.letter_annotations.values()[0][j+1]+
               seq.letter_annotations.values()[0][j+2])/3) 
-              < 10):
+              < phred_cutoff):
                  seq = seq[i:j]
                  done = True
                  break
         j += 1
     return seq
 
-def seqproc(read_path, plasmid_path, template_path, mob_path):
+def seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff):
     """Create templates that will be later aligned with MAFFT"""
     
     # Create list containing mobile elements
@@ -72,7 +71,7 @@ def seqproc(read_path, plasmid_path, template_path, mob_path):
                 for read_file in fileList2:
                     if (initials in read_file.lower()):
                         out_file = SeqIO.read(read_path+read_file, "abi")
-                        trimmed_file = trim_n(out_file) # trim n's
+                        trimmed_file = trim_n(out_file, phred_cutoff) # trim n's
                         read_list.append(trimmed_file)
                    
     # At this point we have a list of all Sanger reads corresponding to our current plasmid file.

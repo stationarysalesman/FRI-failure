@@ -1,0 +1,40 @@
+LOCUS       Phage_Element            411 bp ds-DNA     linear       05-MAY-2015
+DEFINITION  .
+FEATURES             Location/Qualifiers
+     misc_feature    1..11
+                     /label="prefix/suffix-like seq."
+                     /ApEinfo_revcolor=#c6c9d1
+                     /ApEinfo_fwdcolor=#c6c9d1
+     misc_feature    1..411
+                     /label="Enterobacteria phage phi80"
+                     /ApEinfo_revcolor=#ffef86
+                     /ApEinfo_fwdcolor=#ffef86
+     gene            54..411
+                     /label="C gene"
+                     /ApEinfo_revcolor=#f8d3a9
+                     /ApEinfo_fwdcolor=#f8d3a9
+     gene            1..73
+                     /label="B gene"
+                     /ApEinfo_revcolor=#84b0dc
+                     /ApEinfo_fwdcolor=#84b0dc
+     CDS             54..411
+                     /label="C CDS (head protein)"
+                     /ApEinfo_revcolor=#84b0dc
+                     /ApEinfo_fwdcolor=#84b0dc
+     misc_feature    1..1
+                     /label="1375486"
+                     /ApEinfo_revcolor=#d6b295
+                     /ApEinfo_fwdcolor=#d6b295
+     CDS             1..73
+                     /label="B CDS (head portal protein)"
+                     /ApEinfo_revcolor=#faac61
+                     /ApEinfo_fwdcolor=#faac61
+ORIGIN
+        1 ggccgctgca gcttttgagg ccggagtgaa aaaatcaaac gaggaggagc aagatggcgc
+       61 acgagctgcg taatcttccg catattgcca gtatggcctt taatgagccg ctgatgcttg
+      121 aacccgccta tgcgcgggtt ttcttttgcg cgctggctgg ccagttgggc atcacccggc
+      181 tgacagatac cgtctctggc atcacgcttg atgccggaca aatagccgaa ccgctggcgc
+      241 tgtttggtga ggatgatgac atggatcccc gtccatcacg cagctatcag gtggcaaatg
+      301 gtatcgcggt cttgccggtt tccggcacgc tggtcagtaa aacccgtgcg cttcagcctt
+      361 attccgggat gacgggttac aacgggatca ttgctcgcct gcagcaggca a
+//

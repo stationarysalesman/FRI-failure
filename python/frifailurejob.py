@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 import re
+import argparse
 from decimal import *
 
 def phase_1(job):
@@ -29,8 +30,10 @@ def phase_1(job):
     template_path = job.output_dirs["templates"]
     mob_path = job.input_dirs["mobile_elements"]
     Analysis = job.process_module
-    
-    Analysis.seqproc(read_path, plasmid_path, template_path, mob_path)
+    phred_cutoff = 10 #d efault
+    if 'cutoff' in job.arg_map.keys() and job.arg_map['cutoff']:
+        phred_cutoff = int(job.arg_map['cutoff'])
+    Analysis.seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff)
     # Add templates to input dictionary
     job.input_dirs["templates"] = job.output_dirs["templates"]   
     return
@@ -177,15 +180,6 @@ def phase_3(job):
                     mutation_string = ("MOB\t.\t.\t"+pr_alignment[0].id+"\t"+str(stop-ins_count) + "\t" + 
                                         mob_ele_id + "\t" + str(strand))
                     mutation_list.append(mutation_string)          
-
-                    """As of 2015/8/26, we are no longer tracking mutations in the insertion region.                                      
-                    
-                    if (mob_evidence_dict[key][1]): # append any mutations within the mobile element
-                        #mob_evidence_dict[key] is the list of mutations
-                        for mutation in mob_evidence_dict[key][1]:
-                            mutation_list.append(mutation)
-                            
-                    """
                 
                 mutation_list_2 = list() # will contain mutation in Sanger read
                 validity = Analysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list_2)
@@ -198,7 +192,8 @@ def phase_3(job):
                     out_file.write("#=GENOME_DIFF 1.0\n")
                     for mutation in mutation_list:
                         out_file.write(mutation + "\n")
-                del(mutation_list) 
+                del(mutation_list)
+                del(mutation_list_2)
                 total_complete += 1
         
         print "100% complete."
@@ -213,6 +208,15 @@ def controller(job):
     return
     
 def main():
+    # Specify argument storage variables
+    phred_cutoff = 10 # default
+    # Get arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cutoff", type=int, help="average PHRED score (over 3 nts) to cutoff Sanger reads")
+    args = parser.parse_args()
+    # User has specified a custom cutoff
+    if args.cutoff:
+        phred_cutoff = args.cutoff
     input_dirs = dict()    
     output_dirs = dict()
     input_dirs["mobile_elements"] = "mob_elements/" # location of mobile elements
@@ -221,7 +225,7 @@ def main():
     output_dirs["templates"] = "templates/" # location of .fasta files that will be run through MAFFT
     output_dirs["alignments"] = "alignments/" # path to store and access alignments produced by MAFFT
     output_dirs["genomediff"] = "genomediff/" # path to store genomediff files
-    myJob = jobmanager(input_dirs, output_dirs, "logfile.log", "Analysis")
+    myJob = jobmanager(input_dirs, output_dirs, "logfile.log", "Analysis", vars(args))
 
     # Start pipeline
     controller(myJob)

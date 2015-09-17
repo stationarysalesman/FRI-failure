@@ -1,0 +1,2 @@
+#=GENOME_DIFF 1.0
+SNP	.	.	NGS_pSB1C3	2320	c

@@ -1,0 +1,2 @@
+#=GENOME_DIFF 1.0
+SNP	.	.	RP_pSB1C3	2258	g

@@ -1,0 +1,3 @@
+#=GENOME_DIFF 1.0
+SNP	.	.	jm_pSB1C3	1797	a
+INS	.	.	jm_pSB1C3	2591	c

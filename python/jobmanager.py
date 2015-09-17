@@ -9,7 +9,7 @@ import os
 import datetime
 
 class jobmanager:
-    def __init__(self, input_dirs, output_dirs, logfile_name, process_module):
+    def __init__(self, input_dirs, output_dirs, logfile_name, process_module, args):
         self.master_output_dir = "./output/"
         self.input_dirs = input_dirs
         self.output_dirs = output_dirs
@@ -18,6 +18,7 @@ class jobmanager:
         self.__initialize_input__()
         self.__initialize_output__()
         self.__initialize_logfile__()
+        self.arg_map = args
         return
     @property
     def input_dirs(self):
