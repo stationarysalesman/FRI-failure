@@ -6,6 +6,21 @@ Created on Mon Jun 22 11:21:00 2015
 FRI-Failure Analysis Pipeline
 Copyright Tyler Camp 2015
 module: Analysis
+
+This file is part of fri-failure-analysis.
+
+    fri-failure-analysis is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    fri-failure-analysis is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with fri-failure-analysis.  If not, see <http://www.gnu.org/licenses/>.
 """
 from Bio import SeqIO
 from Bio import AlignIO
