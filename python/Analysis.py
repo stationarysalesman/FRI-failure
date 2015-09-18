@@ -225,12 +225,9 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
             elif (target_nt == "-" and template_nt != "-"):
                 # deletion
                 z = x
-                ignore_count = 0
                 while (z < len(target_seq) and target_seq[z] == "-"):
-                    if (template_seq[z] == "-"): # interrupted by virtue of being a multiple seq alignment
-                        ignore_count += 1                      
                     z += 1
-                del_length = z - x - ignore_count
+                del_length = z - x
                 del_count += del_length
                 mutation_string = ("DEL\t.\t.\t"+
                 template_id + "\t" +
@@ -240,7 +237,7 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
                     mutation_list.append(mutation_string+errata[0])
                 else:
                     mutation_list.append(mutation_string)                    
-                skip = errata[1] + ignore_count # number of nt to skip  
+                skip = errata[1]
                 if ((skip + x) >= stop_index):
                    return Decimal(true_count)/Decimal(stop_index-start_index)
                     
@@ -249,10 +246,8 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
                 z = x
                 ignore_count = 0
                 while (z < len(template_seq) and template_seq[z] == "-"):
-                    if (target_seq[z] == "-"):
-                        ignore_count += 1
                     z += 1
-                ins_length = z - x - ignore_count
+                ins_length = z - x
                 ins_count += ins_length
                 mutation_string = ("INS\t.\t.\t"+
                 template_id + "\t" +
@@ -262,7 +257,7 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
                     mutation_list.append(mutation_string+errata[0])
                 else:
                     mutation_list.append(mutation_string)
-                skip = errata[1] + ignore_count
+                skip = errata[1]
                 if ((skip + x) >= stop_index):
                    return Decimal(true_count)/Decimal(stop_index-start_index)
             else:
@@ -291,7 +286,7 @@ def mob_info(alignments):
         # are aligned. This may overlook edge insertions/deletions.
         start = max(mob_indices[0], read_indices[0])
         stop = min(mob_indices[1], read_indices[1])
-        if ((stop - start) < 200): # not long enough for any meaningful analysis
+        if ((stop - start) < 50): # not long enough for any meaningful analysis
             return
         # call analyze_seq on our read/mobile element to get info about sequence homology
         temp = list()
@@ -304,7 +299,7 @@ def mob_info(alignments):
             [3]: fraction of correctly matched residues
             [4]: offset from beginning of Sanger read at which to truncate analysis"""
         mob_mut_list.append([read.id, mob.id, temp, validity, start])
-        
+        del temp
     curr_lst = list()
     curr_len = 9999999 # do not use this value for "big data" alignments/analyses
 
@@ -334,13 +329,11 @@ def build_mob_evidence_dict(alignment_path):
                 """Evidence contains
                 [0]: id of Sanger read
                 [1]: id of mobile element
-                [2]: list of mutations identified by analyzing mobile element
-                     against Sanger read and validity score
-                [3]: offset from beginning of Sanger read at which to truncate analysis"""  
+                [2]: offset from beginning of Sanger read at which to truncate analysis"""
                     
                 if not(evidence is None):
                     key = evidence[0]
-                    value = [evidence[1], evidence[2], evidence[3]]
+                    value = [evidence[1], evidence[2]]
                     mob_evidence_dict[key]= value
                 print "done."
     return mob_evidence_dict

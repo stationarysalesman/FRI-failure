@@ -58,7 +58,7 @@ def phase_2(job):
             sys.stdout.flush()
             outfile_path = alignment_path+f+"_alignment"
             with open(outfile_path, "w") as out_file:  
-               check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", template_path+f], stdout=out_file)
+               check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", "--op", "3", template_path+f], stdout=out_file)
                sys.stdout.flush()             
                if (check):
                    with open(job.logfile_name, "a") as log:
@@ -133,7 +133,7 @@ def phase_3(job):
                     
                 if not(evidence is None):
                     key = evidence[0]
-                    value = [evidence[1], evidence[2], evidence[4]]
+                    value = [evidence[1], evidence[4]]
                     mob_evidence_dict[key]= value
                 total_complete += 1
         print "100% complete."
@@ -163,7 +163,7 @@ def phase_3(job):
                         # adding start_index of subsequent analysis
                         # subtracting total inserted residues
                     strand = 1                        
-                    stop = start + mob_evidence_dict[key][2] # offset should be from beginning
+                    stop = start + mob_evidence_dict[key][1] # offset should be from beginning
                     mob_ele_id = mob_evidence_dict[key][0]
                     if ("reverse_complement" in mob_ele_id):
                         temp = re.split("-", mob_ele_id)
@@ -180,12 +180,10 @@ def phase_3(job):
                     mutation_string = ("MOB\t.\t.\t"+pr_alignment[0].id+"\t"+str(stop-ins_count) + "\t" + 
                                         mob_ele_id + "\t" + str(strand))
                     mutation_list.append(mutation_string)          
-                
-                mutation_list_2 = list() # will contain mutation in Sanger read
-                validity = Analysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list_2)
-                for mutation in mutation_list_2: # mutation list at index 0
-                    mutation_list.append(mutation)
-                
+                else:
+                    validity = Analysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list)
+
+
                 read_name = pr_alignment[1].id
                 output_path = job.output_dirs["genomediff"]
                 with open(output_path+read_name + ".gd", "w") as out_file:
@@ -193,7 +191,6 @@ def phase_3(job):
                     for mutation in mutation_list:
                         out_file.write(mutation + "\n")
                 del(mutation_list)
-                del(mutation_list_2)
                 total_complete += 1
         
         print "100% complete."
@@ -219,9 +216,9 @@ def main():
         phred_cutoff = args.cutoff
     input_dirs = dict()    
     output_dirs = dict()
-    input_dirs["mobile_elements"] = "mob_elements/" # location of mobile elements
-    input_dirs["reads"] = "reads/" # location of Sanger reads
-    input_dirs["plasmids"] = "plasmids/"
+    input_dirs["mobile_elements"] = "../mob_elements/" # location of mobile elements
+    input_dirs["reads"] = "../reads/" # location of Sanger reads
+    input_dirs["plasmids"] = "../plasmids/"
     output_dirs["templates"] = "templates/" # location of .fasta files that will be run through MAFFT
     output_dirs["alignments"] = "alignments/" # path to store and access alignments produced by MAFFT
     output_dirs["genomediff"] = "genomediff/" # path to store genomediff files
