@@ -12,6 +12,17 @@ from Bio import AlignIO
 import os
 import re
 from decimal import *
+from collections import namedtuple
+
+"""Define the collection of data that carries information about mobile
+element insertions."""
+
+MobileElementInfo = namedtuple('MobileElementInfo',
+                               ['sangerID', #id of Sanger read 
+                                'elementID', #id of mobile element
+                                'startIndex', #index the mobile element inserted 
+                                'validity', #proportion of correctly matched n.t.
+                                'mutations']) #list of differences bt. read & mob
 
 def trim_n(seq, phred_cutoff):
     """Trim the 5' and 3' ends of Sanger reads."""
@@ -274,9 +285,7 @@ def mob_info(alignments):
     
     read = alignments[0] # This is the Sanger read
     
-    #Legacy code    
-    #plasmid_id = pr_map[read.id] # This is the template name we want to write
-    mob_mut_list = list()
+    mob_evidence_list = list()
     for r in range(1, len(alignments)):
         mob = alignments[r] # this is the current mobile element we want to analyze    
         # Analyze the alignment only in the region of the mobile element
@@ -289,32 +298,42 @@ def mob_info(alignments):
         if ((stop - start) < 50): # not long enough for any meaningful analysis
             return
         # call analyze_seq on our read/mobile element to get info about sequence homology
-        temp = list()
-        validity = analyze_seq(mob, read, start, stop, temp)
-        """List contents:
-            [0]: id of Sanger read
-            [1]: id of mobile element
-            [2]: list of mutations identified by analyzing mobile element
-                 against Sanger read and validity score
-            [3]: fraction of correctly matched residues
-            [4]: offset from beginning of Sanger read at which to truncate analysis"""
-        mob_mut_list.append([read.id, mob.id, temp, validity, start])
-        del temp
-    curr_lst = list()
+        current_element_mutation_list = list()
+        validity = analyze_seq(mob, read, start, stop, current_element_mutation_list)
+        current_mobile_element_info = MobileElementInfo(read.id, mob.id, start, validity,
+                                                        current_element_mutation_list)
+        mob_evidence_list.append(current_mobile_element_info)
+        del current_element_mutation_list 
+    curr_info_element = ""
     curr_len = 9999999 # do not use this value for "big data" alignments/analyses
 
-    if not(mob_mut_list):
+    """Shouldn't attempt to access items in empty list"""
+    if not(mob_evidence_list):
         return
-    for lst in mob_mut_list: # find the mobile element with the least number of mutations      
-        if (len(lst[2]) < curr_len):
+    """The goal is to return the strongest possible evidence of a mobile
+    element insertion. To this end, we must do two things:
+    1) Identify the collection of information which has the fewest differences
+       between its sample and mobile element
+    2) Verify that this pair actually exhibits a significant degree of homology"""
+    for info_element in mob_mut_list: # find the mobile element with the least number of mutations      
+        if (len(info_element['mutations']) < curr_len):
             curr_len = len(lst[2])
-            curr_lst = lst      
-    if (curr_lst and curr_lst[3] >= .45): # is the mobile element actually homologous?
-        del(mob_mut_list)
-        return curr_lst
+            curr_info_element = info_element      
+    if (curr_info_element and curr_info_element['validity'] >= .45): # is the mobile element actually homologous?
+        del(mob_evidence_list)
+        return curr_info_element
     
     return                                     
 
+"""Build a dictionary of information relating to mobile element
+homology, such that we can determine if a given sample exhibits
+substantial homology to any mobile elements (note: only 
+informatino about the mobile element which is most similar to 
+the sample is stored in the helper function mob_info). 
+
+The dictionary that this function returns can be indexed by 
+sample ID, i.e. each sample ID is a key in the dictinoary,
+which stores a MobileElementInfo namedtuple."""
 def build_mob_evidence_dict(alignment_path):
     mob_evidence_dict = dict()
     for dirName, subdirList, fileList in os.walk(alignment_path):
@@ -325,15 +344,11 @@ def build_mob_evidence_dict(alignment_path):
                 rm_alignments = AlignIO.read(alignment_path+f, "fasta")
                 print ("Gathering mobile element homology data for read " +
                 rm_alignments[0].id + " and " + rm_alignments[1].id + "..."),
-                evidence = mob_info(rm_alignments)
-                """Evidence contains
-                [0]: id of Sanger read
-                [1]: id of mobile element
-                [2]: offset from beginning of Sanger read at which to truncate analysis"""
-                    
+                mobile_element_evidence = mob_info(rm_alignments)
+                 #todo: figure out why this check is done this way
                 if not(evidence is None):
-                    key = evidence[0]
-                    value = [evidence[1], evidence[2]]
+                    key = mobile_element_evidence['sangerID']
+                    value = mobile_element_evidence
                     mob_evidence_dict[key]= value
                 print "done."
     return mob_evidence_dict

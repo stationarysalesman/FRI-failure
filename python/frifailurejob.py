@@ -17,12 +17,13 @@ import re
 import argparse
 from decimal import *
 
+
 def phase_1(job):
     """FRI-Failure Analysis: Phase 1
     
     Phase 1 involves processing sequencing files. Each file written includes two sequences: a template 
     (first sequence) and a target (second sequence). Filenames containing "pr" denote plasmid/Sanger read
-    files. Filenames containing "rm" denote read/mobile element files."""
+    files. File names containing "rm" denote read/mobile element files."""
     
     # Define necessary names   
     read_path = job.input_dirs["reads"]
@@ -37,6 +38,8 @@ def phase_1(job):
     # Add templates to input dictionary
     job.input_dirs["templates"] = job.output_dirs["templates"]   
     return
+
+
 def phase_2(job):
     """FRI-Failure Analysis: Phase 2
     
@@ -52,10 +55,12 @@ def phase_2(job):
         file_num = len(fileList)
         total_complete = 0                    
         for f in fileList:
+            """Calculate how much progress has been made and display for the user."""
             percent_complete = Decimal(total_complete)/Decimal(file_num)
             percent_complete = int(percent_complete * 100)
             print str(percent_complete) + "% complete...\r",            
             sys.stdout.flush()
+            """Run MAFFT on all template files."""
             outfile_path = alignment_path+f+"_alignment"
             with open(outfile_path, "w") as out_file:  
                check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", "--op", "3", template_path+f], stdout=out_file)
@@ -73,6 +78,8 @@ def phase_2(job):
     job.input_dirs["alignments"] = job.output_dirs["alignments"]
     
     return
+
+
 def phase_3(job):
     """FRI-Failure Analysis: Phase 3
     
@@ -80,32 +87,24 @@ def phase_3(job):
     homology to mobile elements is gathered and used during the analysis. All mutations are
     written out in GenomeDiff format currently."""
     
-    # Define necessary names
+    """Create global mappings for this file."""
     alignment_path = job.output_dirs['alignments']
     curr_output_path = job.master_output_dir
     Analysis = job.process_module
-    
-    """As of 2015/8/26, we are no longer tracking mutations in the insertion region.
-
-    # Define dictionary to map reads to plasmids
-    pr_map = dict()
-    working_dir = job.output_dirs['templates']
-    for dirName, subdirList, fileList in os.walk(working_dir):
-        for f in fileList:
-            if ("pr" in f):
-                name_lst= list()
-                for seq in SeqIO.parse(working_dir+f, "fasta"):
-                    name_lst.append(seq.id)
-                pr_map[name_lst[1]] = name_lst[0] # map reads onto plasmids
-                del(name_lst)
-    """            
     mob_evidence_dict = dict()
+    
+    """Check that we can access the directory containing alignments."""
     if not(os.access(alignment_path, os.F_OK)):
         err_str =  "Error: cannot access", alignment_path
         with open(job.logfile_name, "a") as log:
             log.write(err_str + "\n")
         return 1
-    
+
+    """Gathers mobile element homology by stepping through the alignment
+    path and analyzing each alignment for mutations. Inside the loop,
+    map a key (which is a sample ID) onto a named tuple that contains
+    information about the mobile element with which the sample shares
+    the highest degree of homology."""
     print "Gathering mobile element homology:"
     for dirName, subdirList, fileList in os.walk(alignment_path):
         file_num = len(fileList)
@@ -119,52 +118,82 @@ def phase_3(job):
                 # need to determine if any homology to do nt analysis
                 rm_alignments = AlignIO.read(alignment_path+f, "fasta")                
                
-                """Legacy function call.               
-               evidence = Analysis.mob_info(rm_alignments, pr_map)
-               """
-                evidence = Analysis.mob_info(rm_alignments)
-                """Evidence contains
-                [0]: id of Sanger read
-                [1]: id of mobile element
-                [2]: list of mutations identified by analyzing mobile element
-                     against Sanger read and validity score
-                [3]: fraction of correctly matched residues
-                [4]: offset from beginning of Sanger read at which to truncate analysis"""  
+              
+                mobile_evidence_tuple = Analysis.mob_info(rm_alignments)
+ 
                     
                 if not(evidence is None):
-                    key = evidence[0]
-                    value = [evidence[1], evidence[4]]
+                    key = mobile_evidence_tuple['sangerID']
+                    value = mobile_evidence_tuple
                     mob_evidence_dict[key]= value
                 total_complete += 1
         print "100% complete."
+
+    """This loop performs the actual analysis of samples against their
+    respective template plasmids (i.e., this is where we generate most
+    of the most important information to our future analyses).
+    
+    For each alignment file, we first check if we had previously identified
+    homology between the sample and some mobile element. If so, we 
+    truncate analysis at the start of the insertion."""
     print "Analyzing alignments of plasmids/reads:"
     for dirName, subdirList, fileList in os.walk(alignment_path):
+        
+        """Variables used to display progress to the user"""
         file_num = len(fileList)
-        total_complete = 0                    
+        total_complete = 0
+        
         for f in fileList:            
-            if "pr" in f:  # plasmid/read alignment 
+            if "pr" in f:  # plasmid/read alignment
+                """Display current progress."""
                 percent_complete = Decimal(total_complete)/Decimal(file_num)
-                percent_complete = int(percent_complete * 100)
-                print str(percent_complete) + "% complete...\r",
+                percent_complete = int(percent_complete * 100) # Estimate percentage complete
+                print str(percent_complete) + "% complete...\r", # Move cursor to beginning
+
+                """Begin analysis of sample and template alignment."""
                 mutation_list = list()
-                pr_alignment = AlignIO.read(alignment_path+f, "fasta")
-                print pr_alignment[0].id + "\r", 
+                pr_alignment = AlignIO.read(alignment_path+f, "fasta") # Read sample file
+                print pr_alignment[0].id + "\r",
+                # TODO: test effects of removing flush() calls on output
                 sys.stdout.flush()
+                
+                """Get indices at which to begin and terminate analysis.
+                To determine the start, we use the maximum of the two
+                sequences; for the end, we use the minimum of the two.
+                This prevents mistakenly identifying mutations in the 
+                portions of the alignment where the sequences do not
+                overlap."""
                 plasmid_indices = Analysis.get_indices(pr_alignment[0])
-                #print "plasmid_indices:", plasmid_indices
                 read_indices = Analysis.get_indices(pr_alignment[1])
-                #print "read_indices:", read_indices
                 start = max(plasmid_indices[0], read_indices[0])
                 stop = min(plasmid_indices[1], read_indices[1])
-                #print "initially, stop was", stop
+
+                """Determine whether or not the sample exhibits substantial
+                homology to mobile elements. If so, we can use the start
+                of the insertion to truncate analysis, thereby preventing
+                erroneous mutations from appearing in our final analysis."""
                 key = pr_alignment[1].id
                 if (key in mob_evidence_dict):
                     # index in reference sequence for mob element calculated by:
                         # adding start_index of subsequent analysis
                         # subtracting total inserted residues
-                    strand = 1                        
-                    stop = start + mob_evidence_dict[key][1] # offset should be from beginning
-                    mob_ele_id = mob_evidence_dict[key][0]
+                    strand = 1
+                    """Compute the index at which to terminate analysis. This
+                    should be based on two things:
+                    1) The index (on the sample) of the insertion
+                    2) The offset at which the sample first appears in this
+                    (current) alignment file
+                    Taking these two factors into account yields the index
+                    at which the mobile element insertion occurs in the current
+                    alignment.
+
+                    However, when documenting any mutations, we are
+                    interested in where those mutations occur in relation to 
+                    the original template sequence only. To this end, we must
+                    subtract from the index obtained above the count of insertions
+                    that occur in our sample prior to said mobile element insertion."""
+                    stop = start + mob_evidence_dict[key]['start']
+                    mob_ele_id = mob_evidence_dict[key]['elementID']
                     if ("reverse_complement" in mob_ele_id):
                         temp = re.split("-", mob_ele_id)
                         mob_ele_id = temp[0]
@@ -196,6 +225,8 @@ def phase_3(job):
         print "100% complete."
     
     return
+
+
 def controller(job):
     """Controller for FRI-Failure Analysis pipeline."""
     # Using module Analysis  
@@ -203,7 +234,8 @@ def controller(job):
     phase_2(job)
     phase_3(job)
     return
-    
+
+
 def main():
     # Specify argument storage variables
     phred_cutoff = 10 # default
