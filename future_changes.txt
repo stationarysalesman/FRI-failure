@@ -1,0 +1,37 @@
+Tasks to complete in the next few weeks, organized by commit:
+
+1) Split phase III into several functions and document each
+2) Repeat for phase II
+3) Repeat for phase I
+4) Document functions in Analysis.py
+5) Implement improvements to repeat mediated ins/del identification
+
+
+1)
+
+to gather mobile element homology (function)
+def parse_mobile_alignments(alignment_path, file_list, mob_evidence_dict):
+<traverse file list>
+<mob_info()>
+<update dictionary>
+
+def parse_plasmid_alignments(alignment_path, file_list, mob_evidence_dict):
+<traverse file list>
+<analyze>
+<output>
+
+2)
+
+considerations:
+	can we use multiple threads to generate alignments?
+	do we need to reorganize input file groupings to accomodate?
+	should we use multiple threads, processes, or both?
+
+parallelization approach:
+	split creation of n alignments into n/10 threads (30 alignments/thread)
+	partition sample data across threads (no shared data)
+how do we split data s.t. threads can work with a specific set of samples?
+	easy: each alignment template is a separate file
+	we can generate a list of the files and give each thread a different
+		index range, s.t. thread1 works on [1..29], 2 [30..49], etc.
+

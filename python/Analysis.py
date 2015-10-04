@@ -315,11 +315,11 @@ def mob_info(alignments):
     1) Identify the collection of information which has the fewest differences
        between its sample and mobile element
     2) Verify that this pair actually exhibits a significant degree of homology"""
-    for info_element in mob_mut_list: # find the mobile element with the least number of mutations      
-        if (len(info_element['mutations']) < curr_len):
-            curr_len = len(lst[2])
+    for info_element in mob_evidence_list: # find the mobile element with the least number of mutations      
+        if (len(info_element.mutations) < curr_len):
+            curr_len = len(info_element.mutations)
             curr_info_element = info_element      
-    if (curr_info_element and curr_info_element['validity'] >= .45): # is the mobile element actually homologous?
+    if (curr_info_element and curr_info_element.validity >= .45): # is the mobile element actually homologous?
         del(mob_evidence_list)
         return curr_info_element
     
