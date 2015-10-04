@@ -8,14 +8,13 @@ Created on Tue Jul  7 09:44:45 2015
     
 from Bio import AlignIO
 import Analysis
-#Legacy import
-#from Bio import SeqIO
 from jobmanager import jobmanager
 import os
 import subprocess
 import sys
 import re
 import argparse
+
 from decimal import *
 
 
@@ -40,6 +39,18 @@ def phase_1(job):
     job.input_dirs["templates"] = job.output_dirs["templates"]   
     return
 
+def create_alignment(infile_path, outfile_path, log_path):
+    """Create a single alignment from template found at infile_path, and output it to outfile_path.
+
+    This function handles the generation of alignments with MAFFT, and options should be changed 
+    here. Future implementations will see this function running concurrently across several threads, 
+    each using a separate infile_path (template file)."""
+    with open(outfile_path, "w") as out_file:  
+       check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", infile_path], stdout=out_file)
+       sys.stdout.flush()             
+       if (check):
+           with open(log_path, "a") as log:
+               log.write("Mafft error (input=" + f + ", output=" + outfile_path + ")\n")
 
 def phase_2(job):
     """FRI-Failure Analysis: Phase 2
@@ -50,7 +61,7 @@ def phase_2(job):
     # Define necessary directories    
     alignment_path = job.output_dirs["alignments"]
     template_path = job.input_dirs['templates']
-    
+    log_path = job.logfile_name
     print "Creating alignments with MAFFT:"
     for dirName, subdirList, fileList in os.walk(template_path):
         file_num = len(fileList)
@@ -62,16 +73,9 @@ def phase_2(job):
             print str(percent_complete) + "% complete...\r",            
             sys.stdout.flush()
             """Run MAFFT on all template files."""
-            outfile_path = alignment_path+f+"_alignment"
-            with open(outfile_path, "w") as out_file:  
-               check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", "--op", "3", template_path+f], stdout=out_file)
-               sys.stdout.flush()             
-               if (check):
-                   with open(job.logfile_name, "a") as log:
-                       log.write("Mafft error (input=" + f + ", output=" + outfile_path + ")\n")
-                       
-            
-            sys.stdout.flush()
+            infile_path = template_path+f
+            outfile_path = alignment_path+f+"_alignment.fasta"
+            create_alignment(infile_path, outfile_path, log_path) 
             total_complete += 1
         print "100% complete."
         
@@ -126,7 +130,11 @@ def phase_3(job):
 
 
 def analyze_mobile_homology(fileList, output_path, alignment_path, mob_evidence_dict):
+    """Gather data relating to homology between samples and mobile elements.
 
+    This function uses a namedtuple to store information about homology. After calling
+    helper function mob_info(), update the mob_evidence_dict (a dictionary) with keys 
+    (sample names) and values (namedtuple containing homology data)."""
     file_num = len(fileList)
     total_complete = 0  
     for f in fileList:           
@@ -136,6 +144,7 @@ def analyze_mobile_homology(fileList, output_path, alignment_path, mob_evidence_
         print str(percent_complete) + "% complete...\r",
         """Here, we determine mobile element homology to inform our
         analysis later in the work flow."""
+        print f
         rm_alignments = AlignIO.read(alignment_path+f, "fasta")                
 
         """Generate a named tuple that contains information about
@@ -154,7 +163,13 @@ def analyze_mobile_homology(fileList, output_path, alignment_path, mob_evidence_
 
 
 def parse_samples(fileList, output_path, alignment_path, mob_evidence_dict):
+    """Traverse the list of alignments containing plasmids and reads and 
+    analyze them for mutations.
 
+    This function utilizes a helper function analyze_sample to perform the 
+    analysis. Then, parse_samples outputs the results to a file named for 
+    the current sample."""
+    
     """Variables used to display progress to the user"""
     file_num = len(fileList)
     total_complete = 0
@@ -184,18 +199,20 @@ def parse_samples(fileList, output_path, alignment_path, mob_evidence_dict):
     return
 
 
-"""This function performs the actual analysis of samples against their
-respective template plasmids (i.e., this is where we generate most
-of the most important information to our future analyses).
-    
-For each alignment file, we first check if we had previously identified
-homology between the sample and some mobile element. If so, we 
-truncate analysis at the start of the insertion.
 
-This function assigns two of its arguments, outfile_name and mutation_list,
-to new values. The caller expects them to have a certain state. Modify these 
-values with care."""
 def analyze_sample(infile_path, mob_evidence_dict, mutation_list):
+    """This function performs the actual analysis of samples against their
+    respective template plasmids (i.e., this is where we generate most
+    of the most important information to our future analyses).
+
+    For each alignment file, we first check if we had previously identified
+    homology between the sample and some mobile element. If so, we 
+    truncate analysis at the start of the insertion.
+
+    This function assigns two of its arguments, outfile_name and mutation_list,
+    to new values. The caller expects them to have a certain state. Modify these 
+    values with care."""
+    
     """Begin analysis of sample and template alignment."""
     pr_alignment = AlignIO.read(infile_path, "fasta") # Read sample file
     outfile_name = pr_alignment[1].id
@@ -243,10 +260,11 @@ def analyze_sample(infile_path, mob_evidence_dict, mutation_list):
     
     
 
-"""Analyze a sequence, compensating for mobile element insertions.
-This function finalizes parameters for analysis and proceeds with the analyze function. 
-This function performs no I/O; it is left to the caller."""
+
 def analyze_mobile_ins(mob_ele_id, template, sample, start, stop, mutation_list):
+    """Analyze a sequence, compensating for mobile element insertions.
+    This function finalizes parameters for analysis and proceeds with the analyze function. 
+    This function performs no I/O; it is left to the caller."""
     strand = 1    
     if ("reverse_complement" in mob_ele_id):
         temp = re.split("-", mob_ele_id)
