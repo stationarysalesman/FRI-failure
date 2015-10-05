@@ -151,9 +151,9 @@ def get_sub_rep(seq_frag):
     
  # determine number of repeats, if any
 def build_repeat_string(seq, x, mut_length, ins):
-    """Determine number of repeated sequences in seq.
+    """Determine number of tandem repeats in seq, starting at x."""
     
-    Starting from seq[x], determine the number of repeated units
+    """Starting from seq[x], determine the number of repeated units
     of length mut_length directly downstream or upstream of
     seq[x:x+mut_length].
     arg: ins is boolean (1 -> insertion, 0 -> deletion"""
@@ -192,13 +192,89 @@ def build_repeat_string(seq, x, mut_length, ins):
             repeat_new_copies = repeat_ref_num + delta_units
         else:
             repeat_new_copies = repeat_ref_num - delta_units  
-        errata = ("\trepeat_seq="+ repeat_seq + "\trepeat_len="+str(repeat_len)+"\t"+
-        "repeat_ref_num="+str(repeat_ref_num)+"\trepeat_new_copies="+
-        str(repeat_new_copies))
+        errata = ("\trepeat_seq="+ repeat_seq + "\trepeat_len="+str(repeat_len)+
+                  "\t"+"repeat_ref_num="+str(repeat_ref_num)+
+                  "\trepeat_new_copies="+str(repeat_new_copies))
         return [errata, skip]
     else:
         return ["", skip]
-        
+
+
+def identify_disjoint_rmd(template_seq, x, del_length):
+    """Determine whether or not a disjoint repeat mediated deletion 
+    occurred at this location in the template.
+
+    There are two ways for the sequences to align if this occurs. 
+    The alignment program can either place the deleted region first, 
+    or it can align the complement of the repeat sequence first.
+    The ASCII art below gives examples of both cases. Repeat sequences
+    are bracketed.
+
+    Case 1: Deletion first
+    Template: [ctagag]-----[ctagag]tag
+    Sample:    ------ ----- gatctc atc
+
+    Case 2: One copy of repeat sequence first
+    Template: [ctagag]-----[ctagag]tag
+    Sample:   [gatctc]----- ------ atc
+
+    This function will account for both possibilities: if the deletion 
+    occurs first, we build the repeat sequence starting at the 5' end 
+    and compare to the region just downstream of the deletion region, 
+    building the length of the repeat sequence one at a time up to a 
+    reasonable limit. If a copy of the repeat sequence is aligned first,
+    we build the sequence starting at the 3' end of the deletion region,
+    and we compare to the region just upstream of the deletion region."""
+
+    repeat_length = 3
+    repeat_seq = ""
+    """Case 1: deletion aligned first. Start building from the 5' end 
+    (inside the deletion region) and compare to the region just downstream 
+    of the deletion region."""
+
+    while (repeat_length < 10):
+        upstr_index = x
+        downstr_index = x + repeat_length
+        candidate_seq = template_seq[upstr_index:downstr_index]
+        compare_upstr_index = downstr_index
+        compare_downstr_index = downstr_index + repeat_length
+        compare_seq = template_seq[compare_upstr_index:compare_downstr_index]
+        if candidate_seq == compare_seq:
+            repeat_seq = candidate_seq
+        else:
+            break
+
+    if repeat_seq != "":
+        return repeat_seq
+
+
+    """Case 2: a copy of the repeat sequence aligned first. Start building 
+    from the 3' end (inside the deletion region) and compare to the region 
+    just upstream of the deletion region."""
+    
+    
+    """The repeat sequence should be, at minimum, 3 nucleotides in length."""
+    repeat_length = 3
+    while (repeat_length < 10):
+        downstr_index = x+del_length
+        upstr_index = downstr_index-repeat_length
+        candidate_seq = template_seq[upstr_index:downstr_index]
+        compare_upstr_index = x-repeat_length
+        compare_downstr_index = x
+        compare_seq = template_seq[compare_upstr_index:compare_downstr_index]
+        if candidate_seq == compare_seq:
+            repeat_seq = candidate_seq
+        else:
+            break
+
+    
+    if repeat_seq != "":
+        return repeat_seq
+
+    return
+    
+
+    
 def analyze_seq(template, target, start_index, stop_index, mutation_list):
     """Analyze an alignment between template and target
     between the given indices."""
@@ -244,8 +320,12 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
                 template_id + "\t" +
                 str(ref_index) + "\t" + str(del_length))
                 errata = build_repeat_string(template_seq, x, del_length, 0)
+                """Determine if this is a disjoint repeat mediated deletion"""
+                disj_rmd_seq = identify_disjoint_rmd(template_seq, x, del_length)
                 if (errata[0] != ""):
                     mutation_list.append(mutation_string+errata[0])
+                elif disj_rmd_seq != "":
+                    mutation_list.append(
                 else:
                     mutation_list.append(mutation_string)                    
                 skip = errata[1]
@@ -345,7 +425,6 @@ def build_mob_evidence_dict(alignment_path):
                 print ("Gathering mobile element homology data for read " +
                 rm_alignments[0].id + " and " + rm_alignments[1].id + "..."),
                 mobile_element_evidence = mob_info(rm_alignments)
-                 #todo: figure out why this check is done this way
                 if not(evidence is None):
                     key = mobile_element_evidence['sangerID']
                     value = mobile_element_evidence
