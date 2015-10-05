@@ -144,7 +144,6 @@ def analyze_mobile_homology(fileList, output_path, alignment_path, mob_evidence_
         print str(percent_complete) + "% complete...\r",
         """Here, we determine mobile element homology to inform our
         analysis later in the work flow."""
-        print f
         rm_alignments = AlignIO.read(alignment_path+f, "fasta")                
 
         """Generate a named tuple that contains information about
@@ -293,8 +292,8 @@ def analyze_mobile_ins(mob_ele_id, template, sample, start, stop, mutation_list)
 def controller(job):
     """Controller for FRI-Failure Analysis pipeline."""
     
-    phase_1(job)
-    phase_2(job)
+    #phase_1(job)
+    #phase_2(job)
     phase_3(job)
     return
 
