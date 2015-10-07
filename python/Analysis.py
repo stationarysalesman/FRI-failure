@@ -155,14 +155,14 @@ def get_sub_rep(seq_frag):
     return [seq_frag, 1]
     
  # determine number of repeats, if any
-def build_repeat_string(seq, x, mut_length, ins, tandem_seq, mut_str):
+def build_repeat_string(seq, x, mut_length, ins, tandem_seq):
     """Determine number of tandem repeats in seq, starting at x."""
     
     """Starting from seq[x], determine the number of repeated units
     of length mut_length directly downstream or upstream of
     seq[x:x+mut_length].
     arg: ins is boolean (1 -> insertion, 0 -> deletion"""
-
+    mut_str = ""
     seq_str = str.replace("-", "", str(seq))           
     sub_rep = get_sub_rep(seq_str[x:x+mut_length])
     repeat_seq = sub_rep[0]
@@ -176,7 +176,7 @@ def build_repeat_string(seq, x, mut_length, ins, tandem_seq, mut_str):
     
     """This is an error condition and will cause the process to exit."""
     if (repeat_len <= 0): 
-        return -1
+        sys.exit("ERROR: repeat_len <= 0")
     
     """First, we move toward the 5' end by repeat_len each iteration"""
     while (str(seq_str[start_index:start_index+repeat_len])
@@ -192,7 +192,7 @@ def build_repeat_string(seq, x, mut_length, ins, tandem_seq, mut_str):
     repeat_ref_num = (stop_index-start_index)/repeat_len
     if (repeat_ref_num == 1 and delta_units == 1):
         """Not repeat mediated."""
-        return 0    
+        return
     elif (repeat_len * repeat_ref_num >= 5):
         """Meets GenomeDiff criteria for RMD/RMI"""
         repeat_new_copies = 0
@@ -205,9 +205,9 @@ def build_repeat_string(seq, x, mut_length, ins, tandem_seq, mut_str):
         mut_str = ("\trepeat_seq="+ repeat_seq + "\trepeat_len="+str(repeat_len)+
                   "\t"+"repeat_ref_num="+str(repeat_ref_num)+
                   "\trepeat_new_copies="+str(repeat_new_copies))
-        return 1
+        return mut_str
     else:
-        return 0
+        return
 
 
 def identify_disjoint_rmd(template_seq, x, del_length):
@@ -317,22 +317,25 @@ def eval_del(mutObject, template, target, x, ref_index):
 
     """Determine if this is an RMD caused by tandem repeats."""
     tandem_seq = None
-    errata = None
-    is_tandem_rmd = build_repeat_string(template_seq, x, del_length, 0,
-                                        tandem_seq, errata)
-    
-    """Error condition. For now, we want to terminate the process."""
-    if (is_tandem_rmd < 0):
-        sys.exit("Error: repeat_len <= 0")
-    elif (is_tandem_rmd):
-        mutation_str += errata
-        mutObject.set_string(mutation_str)
+
+    """tandem_rmd_str holds a GenomeDiff mutation string if there is
+    a tandem RMD here."""
+    tandem_rmd_str = build_repeat_string(template_seq, x, del_length, 0,
+                                        tandem_seq)
+    """If tandem repeats, we append the new information."""
+    if (tandem_rmd_str):
+        mutation_str += tandem_rmd_str
+    """Regardless of status, set the mutation string of the Mutation
+    object."""
+    mutObject.set_string(mutation_str)
         
-    """Determine if this is a disjoint repeat mediated deletion"""
-    disj_rmd_seq = identify_disjoint_rmd(template_seq, x, del_length)
-    if (disj_rmd_seq):
-        errata = "\tbetween="+str(disj_rmd_seq)
-        mutObject.set_string(mutation_str+errata)
+    """Determine if this is a disjoint repeat mediated deletion.
+    Mutually exclusive with tandem repeats."""
+    if not(tandem_rmd_str):
+        disj_rmd_seq = identify_disjoint_rmd(template_seq, x, del_length)
+        if (disj_rmd_seq):
+            errata = "\tbetween="+str(disj_rmd_seq)
+            mutObject.set_string(mutation_str+errata)
     else:
         mutObject.set_string(mutation_str)                    
 
@@ -362,22 +365,18 @@ def eval_ins(mutObject, template, target, x, ref_index):
                        str(target_seq[x:x+ins_length]))
     tandem_seq = None
     errata = None
-    is_tandem_rmi = build_repeat_string(target_seq, x, ins_length, 1,
-                                 tandem_seq, errata)
-    
-    """Error condition. For now, we want to terminate the process."""
-    if (is_tandem_rmi < 0):
-        sys.exit("Error: repeat_len <= 0")
-    elif (is_tandem_rmi):
-        mutation_str += errata
-        mutObject.set_string(mutation_str)
 
-    """Append the proper string."""
-    if (errata):
-        mutObject.set_string(mutation_string+errata)
-    else:
-        mutObject.set_string(mutation_string)
-        
+    """tandem_rmi_str holds a GenomeDiff mutation string if there is
+    a tandem RMI here."""
+    tandem_rmi_str = build_repeat_string(target_seq, x, ins_length, 1,
+                                 tandem_seq)
+    """If tandem repeats, we append the new information."""
+    if (tandem_rmi_str):
+        mutation_str += tandem_rmi_str
+    """Regardless of status, set the mutation string of the Mutation
+    object."""
+    mutObject.set_string(mutation_str)
+
     return 0
 
 

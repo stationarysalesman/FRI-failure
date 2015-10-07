@@ -14,9 +14,17 @@ import subprocess
 import sys
 import re
 import argparse
+from multiprocessing import Process
 
 from decimal import *
 
+"""Global flags."""
+
+"""Number of logical cores. Note: on modern architectures, each physical 
+core may have multiple logical cores. These logical cores can fetch 
+and execute multiple instruction streams in parallel by combining multiple 
+ALUs or other execution circuitry onto a shared core."""
+NUM_CORES = 8
 
 def phase_1(job):
     """FRI-Failure Analysis: Phase 1
@@ -39,18 +47,20 @@ def phase_1(job):
     job.input_dirs["templates"] = job.output_dirs["templates"]   
     return
 
-def create_alignment(infile_path, outfile_path, log_path):
-    """Create a single alignment from template found at infile_path, and output it to outfile_path.
+def create_alignment(file_list, infile_path, alignment_path, log_path):
+    """Create several alignments file_list, and output them to outfile_path.
 
-    This function handles the generation of alignments with MAFFT, and options should be changed 
-    here. Future implementations will see this function running concurrently across several threads, 
-    each using a separate infile_path (template file)."""
-    with open(outfile_path, "w") as out_file:  
-       check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", infile_path], stdout=out_file)
-       sys.stdout.flush()             
-       if (check):
-           with open(log_path, "a") as log:
-               log.write("Mafft error (input=" + f + ", output=" + outfile_path + ")\n")
+    This function handles the generation of alignments with MAFFT, and options 
+    should be changed here. This function runs concurrently on different cores
+    to achieve higher throughput."""
+    for f in file_list:
+        with open(alignment_path+f, "w") as out_file:
+           check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", infile_path+f], stdout=out_file)
+           sys.stdout.flush()             
+           if (check):
+               with open(log_path, "a") as log:
+                   log.write("Mafft error (input=" + f + ", output=" + outfile_path + ")\n")
+
 
 def phase_2(job):
     """FRI-Failure Analysis: Phase 2
@@ -58,28 +68,59 @@ def phase_2(job):
     Phase 2 creates the alignments with the MAFFT alignment program. File input comes from files written
     during phase 1."""
 
-    # Define necessary directories    
+    """Define necessary directories"""    
     alignment_path = job.output_dirs["alignments"]
     template_path = job.input_dirs['templates']
     log_path = job.logfile_name
-    print "Creating alignments with MAFFT:"
+    
+    print "Creating alignments with MAFFT."
     for dirName, subdirList, fileList in os.walk(template_path):
-        file_num = len(fileList)
-        total_complete = 0                    
-        for f in fileList:
-            """Calculate how much progress has been made and display for the user."""
-            percent_complete = Decimal(total_complete)/Decimal(file_num)
-            percent_complete = int(percent_complete * 100)
-            print str(percent_complete) + "% complete...\r",            
-            sys.stdout.flush()
-            """Run MAFFT on all template files."""
-            infile_path = template_path+f
-            outfile_path = alignment_path+f+"_alignment.fasta"
-            create_alignment(infile_path, outfile_path, log_path) 
-            total_complete += 1
-        print "100% complete."
-        
-    # Add alignments to input dictionary
+        file_list = fileList
+
+    """Partition the list of files. Each core should get roughly
+    the same number of files to process."""
+    partition_size = len(file_list)/NUM_CORES
+    """Create a list of file lists."""
+    partition_list = list()
+    index = 0
+
+    """Partition the list by multiplying an index by the partition size to 
+    get the starting index, and add the partition_size to get the end 
+    index. If the number of files does not divide evenly by NUM_CORES, 
+    we must add the tail end of the file list outside of the loop."""
+    while (index < NUM_CORES):
+        start_index = index*partition_size
+        partition_list.append(file_list[start_index:start_index+partition_size])
+        index += 1
+    if (len(file_list) % NUM_CORES):
+        """Allocate the leftover files over all the processors."""
+        start_index = index*partition_size
+        leftover_list = file_list[start_index:len(file_list)]
+        mod_index = 0
+        for f in leftover_list:
+            """Modulo the index to wrap around the file_list."""""
+            partition_list[mod_index % len(file_list)].append(leftover_list[0])
+            mod_index += 1
+
+
+    assert not(len(partition_list) % NUM_CORES)
+
+    """Create list of processes so we can join them."""
+    proc_list = list()
+    
+    """Create a new process for each partition of the file list."""
+    for template_list in partition_list:        
+        proc = Process(target=create_alignment,
+                       args=(template_list, template_path, alignment_path,
+                             log_path))
+        proc_list.append(proc)
+        proc.start()
+
+    """Join the processes."""
+    for proc in proc_list:
+        proc.join()
+
+    """Add alignments directory to the input directories map."""
     job.input_dirs["alignments"] = job.output_dirs["alignments"]
     
     return
@@ -292,8 +333,8 @@ def analyze_mobile_ins(mob_ele_id, template, sample, start, stop, mutation_list)
 def controller(job):
     """Controller for FRI-Failure Analysis pipeline."""
     
-    #phase_1(job)
-    #phase_2(job)
+    phase_1(job)
+    phase_2(job)
     phase_3(job)
     return
 
