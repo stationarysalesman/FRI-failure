@@ -25,6 +25,9 @@ MobileElementInfo = namedtuple('MobileElementInfo',
                                 'startIndex', #index the mobile element inserted 
                                 'validity', #proportion of correctly matched n.t.
                                 'mutations']) #list of differences bt. read & mob
+"""Declare flags."""
+NO_CALL = 1
+NO_MUT = 2
 
 def trim_n(seq, phred_cutoff):
     """Trim the 5' and 3' ends of Sanger reads."""
@@ -243,11 +246,12 @@ def identify_disjoint_rmd(template_seq, x, del_length):
         upstr_index = x
         downstr_index = x + repeat_length
         candidate_seq = template_seq[upstr_index:downstr_index]
-        compare_upstr_index = downstr_index
-        compare_downstr_index = downstr_index + repeat_length
+        compare_upstr_index = x + del_length
+        compare_downstr_index = compare_upstr_index + repeat_length
         compare_seq = template_seq[compare_upstr_index:compare_downstr_index]
-        if candidate_seq == compare_seq:
+        if str(candidate_seq) == str(compare_seq):
             repeat_seq = candidate_seq
+            repeat_length += 1
         else:
             break
 
@@ -269,7 +273,7 @@ def identify_disjoint_rmd(template_seq, x, del_length):
         compare_upstr_index = x-repeat_length
         compare_downstr_index = x
         compare_seq = template_seq[compare_upstr_index:compare_downstr_index]
-        if candidate_seq == compare_seq:
+        if str(candidate_seq) == str(compare_seq):
             repeat_seq = candidate_seq
         else:
             break
@@ -281,16 +285,14 @@ def identify_disjoint_rmd(template_seq, x, del_length):
     return
     
 
-def eval_del(template, target, x, ref_index, STOP):
+def eval_del(mutObject, template, target, x, ref_index):
     """Evaluate a previously identified deletion.
 
     At entry, the caller has identified that there is a deletion at 
-    index x in the alignment. Create a Mutation object with 
+    index x in the alignment. Assign a Mutation object with 
     information based on what kind of deletion it is."""
 
-    """Create Mutation object to store mutation data."""
-    mutObject = Mutation()
-    mutObject.set_type("DEL")
+    mutObject.set_mutation_type("DEL")
 
     template_seq = template.seq
     template_id = template.id
@@ -329,28 +331,22 @@ def eval_del(template, target, x, ref_index, STOP):
     """Determine if this is a disjoint repeat mediated deletion"""
     disj_rmd_seq = identify_disjoint_rmd(template_seq, x, del_length)
     if (disj_rmd_seq):
-        errata = "\tbetween="+disj_rmd_seq
+        errata = "\tbetween="+str(disj_rmd_seq)
         mutObject.set_string(mutation_str+errata)
     else:
-        mutObject.set_string(mutation_string)                    
-    
-    """Check if analysis must stop in caller"""
-    if ((skip + x) >= stop_index):
-        STOP = 1
-           
+        mutObject.set_string(mutation_str)                    
 
-    return mutObject
+    return 0
 
-def eval_ins(template, target, x, ref_index, STOP):
+def eval_ins(mutObject, template, target, x, ref_index):
     """Evaluate a previously identified insertion.
 
     At entry, the caller has identified that there is an insertion at 
-    index x in the alignment. Create a  Mutation object with 
+    index x in the alignment. Assign a  Mutation object with 
     information based on what kind of insertion it is."""
 
-    """Create Mutation object to store mutation data."""
-    mutObject = Mutation()
-    mutObject.set_type("INS")
+
+    mutObject.set_mutation_type("INS")
     
     template_seq = template.seq
     template_id = template.id
@@ -375,15 +371,31 @@ def eval_ins(template, target, x, ref_index, STOP):
     elif (is_tandem_rmi):
         mutation_str += errata
         mutObject.set_string(mutation_str)
-    
+
+    """Append the proper string."""
     if (errata):
-        mutation_list.append(mutation_string+errata)
+        mutObject.set_string(mutation_string+errata)
     else:
-        mutation_list.append(mutation_string)
-    skip = errata[1]
-    if ((skip + x) >= stop_index):
-       return Decimal(true_count)/Decimal(stop_index-start_index)
-def eval_nt(template, target, x, ref_index, STOP):
+        mutObject.set_string(mutation_string)
+        
+    return 0
+
+
+def eval_snp(mutObject, template, target, x, ref_index):
+    """Evaluate a previously identified SNP.
+
+    At entry, the caller has identified that there is a SNP at 
+    index x in the alignment. Assign a  Mutation object with 
+    information based on the SNP's location."""
+
+    mutObject.set_mutation_type("SNP")
+    template_id = template.id
+    target_nt = target.seq[x]
+    mutObject.set_string("SNP\t.\t.\t"+template_id+"\t"+str(ref_index)+"\t"+target_nt)
+
+    return 0
+
+def eval_nt(template, target, x, ref_index):
     """Evaluate whether or not a mutation occurred here,
     and call helpers to identify them.
 
@@ -392,29 +404,34 @@ def eval_nt(template, target, x, ref_index, STOP):
     information needed by the caller should be returned 
     in this object."""
 
-    template_nt = template_seq[x]
-    target_nt = target_seq[x]
-    """Some kind of mutation occurred here."""
+    template_nt = template.seq[x]
+    target_nt = target.seq[x]
+    """Some kind of discrepancy here."""
     if (target_nt != template_nt):
-            
+
+        """Define Mutation object that will be passed to evaluation 
+        functions."""
+        mutObject = Mutation()
         """Sequencing could not reach a consensus for any nucleotide here,
         so we don't count these as mutations."""
         if (target_nt == "n"):
             del(mutObject)
-            return
+            return NO_CALL
         elif (target_nt == "-" and template_nt != "-"):
             """Deletion"""
-            mutObject = eval_del(template, target, x, ref_index, STOP)
+            check = eval_del(mutObject, template, target, x, ref_index)
             return mutObject
         elif (template_nt == "-" and target_nt != "-"):
             """Insertion"""
-            mutObject = eval_ins(template, target, x, ref_index, STOP)
-            
+            check = eval_ins(mutObject, template, target, x, ref_index)
+            return mutObject
         else:
-            mutation_string = "SNP\t.\t.\t"+template_id+"\t"+str(ref_index)+"\t"+target_nt
-            mutation_list.append(mutation_string)
+            check = eval_snp(mutObject, template, target, x, ref_index)
+            return mutObject
+            
     else:
-        true_count += 1
+        return NO_MUT
+        
 def analyze_seq(template, target, start_index, stop_index, mutation_list):
     """Analyze an alignment between template and target
     between the given indices."""
@@ -429,11 +446,6 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
     del_count = 0 # total number of nts deleted    
     skip = 0
     
-    """Flag used to track whether or not to continue analysis. Based on 
-    in/dels occuring on the trailing ends of the reads (unlikely edge 
-    case)."""
-    STOP = 0
-    
     true_count = 0
     for x in range(start_index, stop_index):   
         # calculate "true index" to map mutations onto reference sequence
@@ -447,15 +459,17 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
             
         """Evaluate the alignment at index x, identifying any mutations 
         and returning them."""
-        mutObject = eval_nt(template, target, x, ref_index, STOP)
+        mutObject = eval_nt(template, target, x, ref_index)
 
         """Did a mutation occur?"""
-        if not(mutObject):
+        if (mutObject == NO_MUT):
             true_count += 1
             continue
+        """Was there a base call for the target sequence at this location?"""
+        if (mutObject == NO_CALL):
+            continue    
         
-
-        mut_type = mutObject.get_type()
+        mut_type = mutObject.get_mutation_type()
         """Do we need to skip nucleotides following this mutation?
         We can calculate this for in/dels by subtracting 1 from the 
         length of the in/del."""
@@ -467,15 +481,12 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
             del_count += 1
         elif (mut_type == "INS"):
             ins_count += 1
+            
         """Add the Mutation object's string field to the mutation list."""
         mutation_list.append(mutObject.get_string())
-
-        """Do we need to stop analysis (due to an in/del occuring at the 
-        end of an alignment)? To do this, we can prematurely compute the 
-        percent of nucleotides that were successfully matched and return 
-        this value."""
-        if STOP:
-            return Decimal(true_count)/Decimal(stop_index-start_index)
+        
+        """Delete the object."""
+        del(mutObject)
 
     validity = Decimal(true_count)/Decimal(stop_index-start_index) # percent nts that match in analysis frame
     return validity

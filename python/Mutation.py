@@ -32,7 +32,7 @@ class Mutation:
     def set_length(self, length):
         self.length = length
         return
-    def set_type(self, typ):
+    def set_mutation_type(self, typ):
         self.mutation_type = typ
         return
     def set_loc(self, loc):
