@@ -222,11 +222,11 @@ def identify_disjoint_rmd(template_seq, x, del_length):
 
     Case 1: Deletion first
     Template: [ctagag]-----[ctagag]tag
-    Sample:    ------ ----- gatctc atc
+    Sample:    ------ ----- ctagag tag
 
     Case 2: One copy of repeat sequence first
     Template: [ctagag]-----[ctagag]tag
-    Sample:   [gatctc]----- ------ atc
+    Sample:   [ctagag]----- ------ tag
 
     This function will account for both possibilities: if the deletion 
     occurs first, we build the repeat sequence starting at the 5' end 
@@ -238,6 +238,12 @@ def identify_disjoint_rmd(template_seq, x, del_length):
 
     repeat_length = 3
     repeat_seq = None
+
+    """If the deletion length is less than our minimum repeat length, 
+    this algorithm will fail with false positives, so we terminate if 
+    the deletion length is too small."""
+    if (del_length < 3):
+        return
     """Case 1: deletion aligned first. Start building from the 5' end 
     (inside the deletion region) and compare to the region just downstream 
     of the deletion region."""
