@@ -39,7 +39,7 @@ def phase_1(job):
     template_path = job.output_dirs["templates"]
     mob_path = job.input_dirs["mobile_elements"]
     Analysis = job.process_module
-    phred_cutoff = 10 #d efault
+    phred_cutoff = 10 #default
     if 'cutoff' in job.arg_map.keys() and job.arg_map['cutoff']:
         phred_cutoff = int(job.arg_map['cutoff'])
     Analysis.seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff)
@@ -55,7 +55,8 @@ def create_alignment(file_list, infile_path, alignment_path, log_path):
     to achieve higher throughput."""
     for f in file_list:
         with open(alignment_path+f, "w") as out_file:
-           check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet", infile_path+f], stdout=out_file)
+           check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet",
+                                    infile_path+f], stdout=out_file)
            sys.stdout.flush()             
            if (check):
                with open(log_path, "a") as log:
@@ -99,7 +100,7 @@ def phase_2(job):
         mod_index = 0
         for f in leftover_list:
             """Modulo the index to wrap around the file_list."""""
-            partition_list[mod_index % len(file_list)].append(leftover_list[0])
+            partition_list[mod_index % len(file_list)].append(f)
             mod_index += 1
 
 
