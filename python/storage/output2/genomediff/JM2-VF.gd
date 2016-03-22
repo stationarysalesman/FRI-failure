@@ -1,4 +1,0 @@
-#=GENOME_DIFF 1.0
-SNP	.	.	jm_pSB1C3	1818	g
-INS	.	.	jm_pSB1C3	2591	c
-DEL	.	.	jm_pSB1C3	2643	1

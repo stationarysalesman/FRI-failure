@@ -1,2 +1,0 @@
-#=GENOME_DIFF 1.0
-INS	.	.	HT_pSB1C3	2592	c
