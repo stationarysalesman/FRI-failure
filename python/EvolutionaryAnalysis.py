@@ -16,31 +16,60 @@ from decimal import *
 from collections import namedtuple
 from Mutation import Mutation
 from Analysis import Analysis
-
+from datetime import datetime
+import time
+import errno
+import random
 
 
 class EvolutionaryAnalysis(Analysis):
+    """EvolutionaryAnalysis: A subclass of Analysis used to perform evolution
+    and stability based analyses.
+
+    Unique instance variables:
+
+    ancestor_seq_filepath: location on disk of ancestor sequence file
+    sample_lst: list of sample sequence file paths"""
 
     def __init__(self, input_dir, output_dir):
         self.output_dir = input_dir
         self.input_dir = output_dir
 
+        # Default values for instance variables
+        self.ancestor_seq_path = None
+        self.sample_lst = None
+        self.tmp_dir = self.init_temp_dir(type(self).__name__)
+
     def start_analysis(self):
         """Start the analysis for an Evolutionary study"""
 
-        """Get the file list"""
+        """Identify sequences to be analyzed"""
         file_list = list()
         for d, sd, fl in os.walk(self.input_dir):
-            file_list = fl
+            for f in fl:
+                if ".gb" in f:
+                    self.ancestor_seq_path = self.input_dir + "/" + f
+                elif ".fasta" in f or ".ab1" in f:
+                    self.sample_lst.append(f)
+                else:
+                    print "Ignoring file: ", f
 
-        """Find ancestor sequence"""
-        for f in file_list:
-            if ".gb" in f:
-                pass
+        """Create miscellaneous temporary directories"""
+        os.mkdir(self.tmp_dir+"templates/")
+        os.mkdir(self.tmp_dir+"alignments/")
+        os.mkdir(self.tmp_dir+"output/")
+
+        """Begin work flow"""
 
 
 
-        print "yay!"
+
+        print "Success."
+        return
+
+
+
+
 
     """input_dir: director containing input"""
 

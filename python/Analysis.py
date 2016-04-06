@@ -5,6 +5,10 @@ Class Analysis: An abstract class used as a template for other kinds of
 analyses."""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+import errno
+import os
+import datetime, time
+import random
 
 class Analysis:
     __metaclass__ = ABCMeta
@@ -13,6 +17,33 @@ class Analysis:
     @abstractmethod
     def start_analysis(self):
         return None
+
+
+    """Boilerplate methods common to most analyses"""
+
+    def init_temp_dir(self, str):
+        """Create a directory in tmp using provided string str and a
+        pseudorandom string based on the current date and time"""
+
+        rstr = str(datetime.today()) + str(time.time())
+        random.seed(rstr)
+        val = str(random.random())
+        path = "/tmp/" + str + val + "/"
+        try:
+            temp_dir = open(path)
+        except IOError as e:
+            if e.errno == errno.EACCES:
+                print e
+                exit(e.errno)
+            elif e.errno == errno.ENOENT:
+                os.mkdir(path)
+            else:
+                raise
+        # Already exists/ok
+        else:
+            temp_dir.close()
+
+        return path
 
     """input_dir: director containing input"""
 
