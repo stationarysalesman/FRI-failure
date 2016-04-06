@@ -7,7 +7,7 @@ Created on Tue Jul  7 09:44:45 2015
 
     
 from Bio import AlignIO
-import Analysis
+import EvolutionaryAnalysis
 from jobmanager import jobmanager
 import os
 import subprocess
@@ -137,7 +137,7 @@ def phase_3(job):
     """Create global mappings for this file."""
     alignment_path = job.output_dirs['alignments']
     curr_output_path = job.master_output_dir
-    Analysis = job.process_module
+    EvolutionaryAnalysisAnalysis = job.process_module
     mob_evidence_dict = dict()
     
     """Check that we can access the directory containing alignments."""
@@ -166,7 +166,7 @@ def phase_3(job):
     analyze_mobile_homology(read_mobile_filelist, curr_output_path, alignment_path, mob_evidence_dict)
     
     print "Analyzing alignments of plasmids/reads:"
-    parse_samples(plasmid_read_filelist, curr_output_path, alignment_path, mob_evidence_dict)
+    mutation_lst = parse_samples(plasmid_read_filelist, curr_output_path, alignment_path, mob_evidence_dict)
 
     return
 
@@ -190,7 +190,7 @@ def analyze_mobile_homology(fileList, output_path, alignment_path, mob_evidence_
 
         """Generate a named tuple that contains information about
         the strongest (if any) mobile element insertion."""
-        mobile_evidence_tuple = Analysis.mob_info(rm_alignments)
+        mobile_evidence_tuple = EvolutionaryAnalysis.mob_info(rm_alignments)
 
         if not(mobile_evidence_tuple is None):
             key = mobile_evidence_tuple.sangerID
@@ -216,7 +216,7 @@ def parse_samples(fileList, output_path, alignment_path, mob_evidence_dict):
     total_complete = 0
     """Build a list of files that contain alignments between plasmids
     and reads."""
-    
+
     for f in fileList:
         """Display current progress."""
         percent_complete = Decimal(total_complete)/Decimal(file_num)
@@ -231,7 +231,7 @@ def parse_samples(fileList, output_path, alignment_path, mob_evidence_dict):
         if not outfile_name:
             print "ERROR: no outfile name"
             continue
-        
+
         with open(output_path+outfile_name+ ".gd", "w") as outfile:
             outfile.write("#=GENOME_DIFF 1.0\n")
             for mutation in mutation_list:
@@ -264,8 +264,8 @@ def analyze_sample(infile_path, mob_evidence_dict, mutation_list):
     This prevents mistakenly identifying mutations in the 
     portions of the alignment where the sequences do not
     overlap."""
-    plasmid_indices = Analysis.get_indices(pr_alignment[0])
-    read_indices = Analysis.get_indices(pr_alignment[1])
+    plasmid_indices = EvolutionaryAnalysis.get_indices(pr_alignment[0])
+    read_indices = EvolutionaryAnalysis.get_indices(pr_alignment[1])
     start = max(plasmid_indices[0], read_indices[0])
     stop = min(plasmid_indices[1], read_indices[1])
 
@@ -294,7 +294,7 @@ def analyze_sample(infile_path, mob_evidence_dict, mutation_list):
         mob_ele_id = mob_evidence_dict[key].elementID
         analyze_mobile_ins(mob_ele_id, pr_alignment[0], pr_alignment[1], start, stop, mutation_list) 
     else: 
-        validity = Analysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list)
+        validity = EvolutionaryAnalysis.analyze_seq(pr_alignment[0], pr_alignment[1], start, stop, mutation_list)
 
     return outfile_name
     
@@ -313,8 +313,8 @@ def analyze_mobile_ins(mob_ele_id, template, sample, start, stop, mutation_list)
         strand = -1
     """Compensate for insertions before mobile element insertion to properly map 
     to reference seq"""
-    validity = Analysis.analyze_seq(template, sample, 
-                                    start, stop, mutation_list)
+    validity = EvolutionaryAnalysis.analyze_seq(template, sample,
+                                                start, stop, mutation_list)
     ins_count = 0
     for mutation in mutation_list:
         tmp = re.split("\t", mutation)
