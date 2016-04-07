@@ -16,11 +16,7 @@ from decimal import *
 from collections import namedtuple
 from Mutation import Mutation
 from Analysis import Analysis
-from datetime import datetime
-import time
-import errno
-import random
-
+from AnalysisDefaults import *
 
 class EvolutionaryAnalysis(Analysis):
     """EvolutionaryAnalysis: A subclass of Analysis used to perform evolution
@@ -32,13 +28,24 @@ class EvolutionaryAnalysis(Analysis):
     sample_lst: list of sample sequence file paths"""
 
     def __init__(self, input_dir, output_dir):
-        self.output_dir = input_dir
-        self.input_dir = output_dir
+        self.input_dir = input_dir
+        self.output_dir = output_dir
 
         # Default values for instance variables
         self.ancestor_seq_path = None
-        self.sample_lst = None
+        self.sample_lst = list()
         self.tmp_dir = self.init_temp_dir(type(self).__name__)
+        print "tmp_dir: ", self.tmp_dir
+        self.template_dir = self.tmp_dir+"templates/"
+        self.alignment_dir = self.tmp_dir+"alignments/"
+
+        # Cutoff score for Sanger reads
+        self.phred_cutoff = 10
+
+        # Location of reference files
+        self.mobile_ele_dir = MOB_ELE_DIR
+
+        return
 
     def start_analysis(self):
         """Start the analysis for an Evolutionary study"""
@@ -55,19 +62,21 @@ class EvolutionaryAnalysis(Analysis):
                     print "Ignoring file: ", f
 
         """Create miscellaneous temporary directories"""
-        os.mkdir(self.tmp_dir+"templates/")
-        os.mkdir(self.tmp_dir+"alignments/")
-        os.mkdir(self.tmp_dir+"output/")
+        os.mkdir(self.template_dir)
+        os.mkdir(self.alignment_dir)
+
 
         """Begin work flow"""
 
 
-
+        seqproc(self.sample_lst, self.ancestor_seq_path, self.template_dir, MOB_ELE_DIR, self.phred_cutoff)
 
         print "Success."
         return
 
-
+    def cleanup(self):
+        """Relinquish any resources acquired"""
+        return None
 
 
 
@@ -155,19 +164,18 @@ def trim_n(seq, phred_cutoff):
                 
     # Trim 3' end
     j = i
-    done = False
     while (j < len(seq.seq)) and not(done):
         if (((seq.letter_annotations.values()[0][j]+
               seq.letter_annotations.values()[0][j+1]+
               seq.letter_annotations.values()[0][j+2])/3) 
               < phred_cutoff):
                  seq = seq[i:j]
-                 done = True
                  break
         j += 1
     return seq
 
-def seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff):
+
+def seqproc(sample_lst, plasmid_path, template_path, mob_path, phred_cutoff):
     """Create templates that will be later aligned with MAFFT"""
     
     # Create list containing mobile elements
@@ -175,6 +183,7 @@ def seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff):
     for dirName, subdirList, fileList in os.walk(mob_path):
         for f in fileList:
             mob_seq = SeqIO.read(dirName+f, "genbank")
+
             mob_rc = mob_seq.reverse_complement()
             mob_rc.id = mob_seq.id + "-reverse_complement"
             mob_list.append(mob_seq)
@@ -183,33 +192,35 @@ def seqproc(read_path, plasmid_path, template_path, mob_path, phred_cutoff):
     for dirName, subdirList, fileList in os.walk(plasmid_path):
         for plasmid_file in fileList:
             read_list = list()
-            initials = ""
             plasmid = SeqIO.read(plasmid_path+plasmid_file, "genbank") # object containing plasmid info     
-            temp = plasmid_file   
-            dest = []
-            dest = re.split("_", temp) #get initials from plasmid file name         
-            initials = dest[0].lower()
-            for dirName2, subdirList2, fileList2 in os.walk(read_path):
-                for read_file in fileList2:
-                    if (initials in read_file.lower()):
-                        out_file = SeqIO.read(read_path+read_file, "abi")
-                        trimmed_file = trim_n(out_file, phred_cutoff) # trim n's
-                        read_list.append(trimmed_file)
-                   
-    # At this point we have a list of all Sanger reads corresponding to our current plasmid file.
-    # Ends have been trimmed of N's.            
-            
+            plasmid_id = plasmid.id
+
+            # Create a list of trimmed samples
+            for read_file in sample_lst:
+                out_file = SeqIO.read(read_file, "abi")
+                trimmed_file = trim_n(out_file, phred_cutoff)  # trim n's
+                read_list.append(trimmed_file)
+
+            # At this point we have a list of all Sanger reads corresponding to our current plasmid file.
+            # Ends have been trimmed of N's.
+
             for i, sequence in enumerate(read_list):
+                sample_id = sequence.id
                 for j, mob_seq in enumerate(mob_list):
+                    fname = "rm-"+sample_id+"-"+mob_seq.id
                     temp_lst = [sequence, mob_seq]
-                    SeqIO.write(temp_lst, template_path+"rm"+str(i)+str(j)+"_"+initials, "fasta")
-                    del(temp_lst)
+                    SeqIO.write(temp_lst, template_path+fname, "fasta")
+                    del temp_lst
+
             for i, sequence in enumerate(read_list):
+                sample_id = sequence.id
+                fname = "pr-"+sample_id+"-"+plasmid_id
                 temp_lst = [plasmid, sequence]
-                SeqIO.write(temp_lst, template_path+"pr"+str(i)+"_"+initials, "fasta")
-                del(temp_lst)
+                SeqIO.write(temp_lst, template_path+fname, "fasta")
+                del temp_lst
     return
-    
+
+
 def get_seq_list(seq_path):
     """Return a list of Seq objects from GenBank files located in seq_path."""
     seq_list = []

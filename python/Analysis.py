@@ -7,28 +7,33 @@ analyses."""
 from abc import ABCMeta, abstractmethod, abstractproperty
 import errno
 import os
-import datetime, time
+from datetime import datetime
+import time
 import random
 
 class Analysis:
     __metaclass__ = ABCMeta
 
-    """start_analysis(): driver for the analysis work flow"""
     @abstractmethod
     def start_analysis(self):
+        """Driver for the analysis work flow"""
         return None
 
+    @abstractmethod
+    def cleanup(self):
+        """Perform general cleanup after work flow completion"""
+        return None
 
-    """Boilerplate methods common to most analyses"""
+    # Boilerplate methods common to most analyses
 
-    def init_temp_dir(self, str):
+    def init_temp_dir(self, u_str):
         """Create a directory in tmp using provided string str and a
         pseudorandom string based on the current date and time"""
 
         rstr = str(datetime.today()) + str(time.time())
         random.seed(rstr)
         val = str(random.random())
-        path = "/tmp/" + str + val + "/"
+        path = "/tmp/" + u_str + val + "/"
         try:
             temp_dir = open(path)
         except IOError as e:
@@ -70,6 +75,7 @@ class Analysis:
     output_dir = abstractproperty(get_output_dir, set_output_dir)
 
     """log file"""
+
     @abstractproperty
     def log_file(self):
         return None
@@ -87,9 +93,3 @@ class Analysis:
     @abstractproperty
     def end_time(self):
         return None
-
-
-
-
-
-
