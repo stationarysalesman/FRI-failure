@@ -50,8 +50,7 @@ class Analysis:
 
         return path
 
-    """input_dir: director containing input"""
-
+    # input_dir: director containing input
     _input_dir = None
 
     def get_input_dir(self):
@@ -62,8 +61,7 @@ class Analysis:
 
     input_dir = abstractproperty(get_input_dir, set_inputdirs)
 
-    """output_dir: directory containing output"""
-
+    # output_dir: directory containing output
     _output_dir = None
 
     def get_output_dir(self):
@@ -74,8 +72,7 @@ class Analysis:
 
     output_dir = abstractproperty(get_output_dir, set_output_dir)
 
-    """log file"""
-
+    # log file
     @abstractproperty
     def log_file(self):
         return None
@@ -84,12 +81,18 @@ class Analysis:
     def write_log(self, data):
         return None
 
-    """Analysis metadata"""
+    # Core allocation: number of available cores (should be set by system administrator)
+    @abstractproperty
+    def core_allocation(self):
+        return None
 
+    # Analysis start time
     @abstractproperty
     def start_time(self):
         return None
 
+    # Analysis end time
     @abstractproperty
     def end_time(self):
         return None
+

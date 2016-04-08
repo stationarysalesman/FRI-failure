@@ -47,6 +47,7 @@ def phase_1(job):
     job.input_dirs["templates"] = job.output_dirs["templates"]   
     return
 
+
 def create_alignment(file_list, infile_path, alignment_path, log_path):
     """Create several alignments file_list, and output them to outfile_path.
 
@@ -103,7 +104,6 @@ def phase_2(job):
             partition_list[mod_index % len(file_list)].append(f)
             mod_index += 1
 
-
     assert not(len(partition_list) % NUM_CORES)
 
     """Create list of processes so we can join them."""
@@ -137,7 +137,7 @@ def phase_3(job):
     """Create global mappings for this file."""
     alignment_path = job.output_dirs['alignments']
     curr_output_path = job.master_output_dir
-    EvolutionaryAnalysisAnalysis = job.process_module
+    EvolutionaryAnalysis = job.process_module
     mob_evidence_dict = dict()
     
     """Check that we can access the directory containing alignments."""
@@ -363,4 +363,5 @@ def main():
     # Start pipeline
     controller(myJob)
     
-main()
+if __name__ == "main":
+    main()

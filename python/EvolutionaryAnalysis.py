@@ -12,6 +12,9 @@ from Bio import AlignIO
 import os
 import re
 import sys
+import subprocess
+from multiprocessing import Process
+from bioutils import *
 from decimal import *
 from collections import namedtuple
 from Mutation import Mutation
@@ -35,9 +38,10 @@ class EvolutionaryAnalysis(Analysis):
         self.ancestor_seq_path = None
         self.sample_lst = list()
         self.tmp_dir = self.init_temp_dir(type(self).__name__)
-        print "tmp_dir: ", self.tmp_dir
+        print "tmp_dir:", self.tmp_dir
         self.template_dir = self.tmp_dir+"templates/"
         self.alignment_dir = self.tmp_dir+"alignments/"
+
 
         # Cutoff score for Sanger reads
         self.phred_cutoff = 10
@@ -57,7 +61,7 @@ class EvolutionaryAnalysis(Analysis):
                 if ".gb" in f:
                     self.ancestor_seq_path = self.input_dir + "/" + f
                 elif ".fasta" in f or ".ab1" in f:
-                    self.sample_lst.append(f)
+                    self.sample_lst.append(self.input_dir + "/" + f)
                 else:
                     print "Ignoring file: ", f
 
@@ -65,11 +69,13 @@ class EvolutionaryAnalysis(Analysis):
         os.mkdir(self.template_dir)
         os.mkdir(self.alignment_dir)
 
+        # Begin work flow
 
-        """Begin work flow"""
+        # Create template files for alignment software
+        self.seqproc()
 
-
-        seqproc(self.sample_lst, self.ancestor_seq_path, self.template_dir, MOB_ELE_DIR, self.phred_cutoff)
+        # Align the templates
+        self.create_alignment_driver()
 
         print "Success."
         return
@@ -122,6 +128,9 @@ class EvolutionaryAnalysis(Analysis):
     def end_time(self):
         return None
 
+    @property
+    def core_allocation(self):
+        return 8
 
     """Ancestor sequence (Biopython Sequence object)"""
     _ancestor_seq_obj = None
@@ -129,96 +138,161 @@ class EvolutionaryAnalysis(Analysis):
     def ancestor_seq_obj(self):
         return self._ancestor_seq_obj
 
+    # Utility functions
+
+    def seqproc(self):
+        """Create templates that will be later aligned with MAFFT"""
+
+        # Create list containing mobile elements
+        mob_list = list()
+        for dirName, subdirList, fileList in os.walk(self.mobile_ele_dir):
+            for f in fileList:
+                mob_seq = SeqIO.read(dirName+f, "genbank")
+
+                mob_rc = mob_seq.reverse_complement()
+                mob_rc.id = mob_seq.id + "-reverse_complement"
+                mob_list.append(mob_seq)
+                mob_list.append(mob_rc)
+
+        read_list = list()
+        plasmid = SeqIO.read(self.ancestor_seq_path, "genbank") # object containing plasmid info
+        plasmid_id = plasmid.id
+
+        # Create a list of trimmed samples
+        for read_file in self.sample_lst:
+            out_file = SeqIO.read(read_file, "abi")
+            trimmed_file = self.trim_n(out_file, self.phred_cutoff)  # trim n's
+            read_list.append(trimmed_file)
+
+        # At this point we have a list of all Sanger reads corresponding to our current plasmid file.
+        # Ends have been trimmed of N's.
+
+        for i, sequence in enumerate(read_list):
+            sample_id = sequence.id
+            for j, mob_seq in enumerate(mob_list):
+                fname = "rm-"+sample_id+"-"+mob_seq.id
+                temp_lst = [sequence, mob_seq]
+                SeqIO.write(temp_lst, self.template_dir+fname, "fasta")
+                del temp_lst
+
+        for i, sequence in enumerate(read_list):
+            sample_id = sequence.id
+            fname = "pr-"+sample_id+"-"+plasmid_id
+            temp_lst = [plasmid, sequence]
+            SeqIO.write(temp_lst, self.template_dir+fname, "fasta")
+            del temp_lst
+        return
+
+    def trim_n(self, seq, phred_cutoff):
+        """Trim the 5' and 3' ends of Sanger reads.
+        :param seq: sequence object to trim
+        :param phred_cutoff: cutoff score for Sanger reads"""
+
+        # Trim 5' end
+        i = 0
+        skip = False
+        done = False
+
+        while (i < len(seq.seq)) and not(done):
+            if (((seq.letter_annotations.values()[0][i]+
+                  seq.letter_annotations.values()[0][i+1]+
+                  seq.letter_annotations.values()[0][i+2])/3) > 30):
+                seq = seq[i:]
+                done = True
+                break
+            i += 1
+
+        # Trim 3' end
+        j = i
+        while (j < len(seq.seq)) and not(done):
+            if (((seq.letter_annotations.values()[0][j]+
+                  seq.letter_annotations.values()[0][j+1]+
+                  seq.letter_annotations.values()[0][j+2])/3) < phred_cutoff):
+                seq = seq[i:j]
+                break
+            j += 1
+        return seq
+
+    def create_alignment(self, lst):
+        """Create several alignments file_list, and output them to outfile_path.
+
+        This function handles the generation of alignments with MAFFT, and options
+        should be changed here. This function runs concurrently on different cores
+        to achieve higher throughput."""
+        for f in lst:
+            with open(self.alignment_dir+f, "w") as out_file:
+                check = subprocess.call(["/usr/lib/mafft/bin/mafft", "--quiet",
+                                        self.template_dir+f], stdout=out_file)
+                sys.stdout.flush()
+                if (check):
+                    err_str = "MAFFT error on input", f
+                    self.write_log(err_str)
+        return
+
+    def create_alignment_driver(self):
+        """Partition templates and send to separate cores for alignment"""
+
+        lst = list()
+        for d, sd, fl in os.walk(self.template_dir):
+            pass
+
+        lst = partition_lst(fl, self.core_allocation)
+
+        proc_list = list()
+
+        # Create a new process for each partition of the file list
+        for template_list in lst:
+            proc = Process(target=self.create_alignment,
+                           args=(template_list,))
+            proc_list.append(proc)
+            proc.start()
+
+        """Join the processes."""
+        for proc in proc_list:
+            proc.join()
+
+        return
+
+    def gather_mobile_ele_homology(self):
+        print "Gathering mobile element homology:"
+        for dirName, subdirList, fileList in os.walk(alignment_path):
+            """Build necessary file lists for analysis."""
+            plasmid_read_filelist = list()
+            read_mobile_filelist = list()
+            for f in fileList:
+                if "pr" in f:
+                    plasmid_read_filelist.append(f)
+                elif "rm" in f:
+                    read_mobile_filelist.append(f)
+
+        analyze_mobile_homology(read_mobile_filelist, curr_output_path, alignment_path, mob_evidence_dict)
+
+        print "Analyzing alignments of plasmids/reads:"
+        mutation_lst = parse_samples(plasmid_read_filelist, curr_output_path, alignment_path, mob_evidence_dict)
+
+
+
+
+
+
 
 
 """Define the collection of data that carries information about mobile
 element insertions."""
 
 MobileElementInfo = namedtuple('MobileElementInfo',
-                               ['sangerID', #id of Sanger read 
+                               ['sangerID', #id of Sanger read
                                 'elementID', #id of mobile element
-                                'startIndex', #index the mobile element inserted 
+                                'startIndex', #index the mobile element inserted
                                 'validity', #proportion of correctly matched n.t.
                                 'mutations']) #list of differences bt. read & mob
 """Declare flags."""
 NO_CALL = 1
 NO_MUT = 2
 
-def trim_n(seq, phred_cutoff):
-    """Trim the 5' and 3' ends of Sanger reads."""
-    # Trim 5' end
-    i = 0
-    skip = False
-    done = False
-
-    while (i < len(seq.seq)) and not(done):
-        if (((seq.letter_annotations.values()[0][i]+
-              seq.letter_annotations.values()[0][i+1]+
-              seq.letter_annotations.values()[0][i+2])/3)
-              > 30):
-                 seq = seq[i:]
-                 done = True
-                 break
-        i += 1
-
-                
-    # Trim 3' end
-    j = i
-    while (j < len(seq.seq)) and not(done):
-        if (((seq.letter_annotations.values()[0][j]+
-              seq.letter_annotations.values()[0][j+1]+
-              seq.letter_annotations.values()[0][j+2])/3) 
-              < phred_cutoff):
-                 seq = seq[i:j]
-                 break
-        j += 1
-    return seq
 
 
-def seqproc(sample_lst, plasmid_path, template_path, mob_path, phred_cutoff):
-    """Create templates that will be later aligned with MAFFT"""
-    
-    # Create list containing mobile elements
-    mob_list = list()
-    for dirName, subdirList, fileList in os.walk(mob_path):
-        for f in fileList:
-            mob_seq = SeqIO.read(dirName+f, "genbank")
 
-            mob_rc = mob_seq.reverse_complement()
-            mob_rc.id = mob_seq.id + "-reverse_complement"
-            mob_list.append(mob_seq)
-            mob_list.append(mob_rc)
-            
-    for dirName, subdirList, fileList in os.walk(plasmid_path):
-        for plasmid_file in fileList:
-            read_list = list()
-            plasmid = SeqIO.read(plasmid_path+plasmid_file, "genbank") # object containing plasmid info     
-            plasmid_id = plasmid.id
-
-            # Create a list of trimmed samples
-            for read_file in sample_lst:
-                out_file = SeqIO.read(read_file, "abi")
-                trimmed_file = trim_n(out_file, phred_cutoff)  # trim n's
-                read_list.append(trimmed_file)
-
-            # At this point we have a list of all Sanger reads corresponding to our current plasmid file.
-            # Ends have been trimmed of N's.
-
-            for i, sequence in enumerate(read_list):
-                sample_id = sequence.id
-                for j, mob_seq in enumerate(mob_list):
-                    fname = "rm-"+sample_id+"-"+mob_seq.id
-                    temp_lst = [sequence, mob_seq]
-                    SeqIO.write(temp_lst, template_path+fname, "fasta")
-                    del temp_lst
-
-            for i, sequence in enumerate(read_list):
-                sample_id = sequence.id
-                fname = "pr-"+sample_id+"-"+plasmid_id
-                temp_lst = [plasmid, sequence]
-                SeqIO.write(temp_lst, template_path+fname, "fasta")
-                del temp_lst
-    return
 
 
 def get_seq_list(seq_path):
@@ -230,7 +304,7 @@ def get_seq_list(seq_path):
     return seq_list
 def get_indices(seq):
     """Determine start and stop indices for analysis.
-    
+
     Obtain start and stop indices for analyzing a single alignment
     within a multiple sequence alignment file. This sequence should be
     smaller than your template."""
@@ -268,44 +342,44 @@ def get_sub_rep(seq_frag):
             return [seq_frag[:x], repeat_num]
         else:
             repeat_num = 1
-            
+
     return [seq_frag, 1]
-    
+
  # determine number of repeats, if any
 def build_repeat_string(seq, x, mut_length, ins, tandem_seq):
     """Determine number of tandem repeats in seq, starting at x."""
-    
+
     """Starting from seq[x], determine the number of repeated units
     of length mut_length directly downstream or upstream of
     seq[x:x+mut_length].
     arg: ins is boolean (1 -> insertion, 0 -> deletion"""
     mut_str = ""
-    seq_str = str.replace("-", "", str(seq))           
+    seq_str = str.replace("-", "", str(seq))
     sub_rep = get_sub_rep(seq_str[x:x+mut_length])
     repeat_seq = sub_rep[0]
     delta_units = sub_rep[1] # number of repeated units deleted/inserted
     # determine if read sequence contains repeats
     # now we must find the bounds of the read repeat sequence
-    repeat_len = len(repeat_seq)    
+    repeat_len = len(repeat_seq)
     start_index = x
     stop_index = x+repeat_len
     skip = mut_length-1
-    
+
     """This is an error condition and will cause the process to exit."""
-    if (repeat_len <= 0): 
+    if (repeat_len <= 0):
         sys.exit("ERROR: repeat_len <= 0")
-    
+
     """First, we move toward the 5' end by repeat_len each iteration"""
     while (str(seq_str[start_index:start_index+repeat_len])
     == str(seq_str[start_index-repeat_len:start_index]) and start_index>0):
         start_index -= repeat_len
-    
+
     """Now, we move toward the 3' end in the same manner"""
     while (str(seq_str[stop_index-repeat_len:stop_index])
     == str(seq_str[stop_index:stop_index+repeat_len]) and
            (stop_index+repeat_len)<len(seq_str)):
         stop_index += repeat_len
-        
+
     repeat_ref_num = (stop_index-start_index)/repeat_len
     if (repeat_ref_num == 1 and delta_units == 1):
         """Not repeat mediated."""
@@ -401,7 +475,6 @@ def identify_disjoint_rmd(template_seq, x, del_length):
         else:
             break
 
-    
     if not(repeat_seq is None):
         return repeat_seq
     
@@ -517,6 +590,7 @@ def eval_snp(mutObject, template, target, x, ref_index):
 
     return 0
 
+
 def eval_nt(template, target, x, ref_index):
     """Evaluate whether or not a mutation occurred here,
     and call helpers to identify them.
@@ -553,7 +627,8 @@ def eval_nt(template, target, x, ref_index):
             
     else:
         return NO_MUT
-        
+
+
 def analyze_seq(template, target, start_index, stop_index, mutation_list):
     """Analyze an alignment between template and target
     between the given indices."""
@@ -587,6 +662,7 @@ def analyze_seq(template, target, start_index, stop_index, mutation_list):
         if (mutObject == NO_MUT):
             true_count += 1
             continue
+
         """Was there a base call for the target sequence at this location?"""
         if (mutObject == NO_CALL):
             continue    
